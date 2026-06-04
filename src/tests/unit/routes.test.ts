@@ -19,6 +19,7 @@ describe("routes", () => {
 
     expect(paths).toContain("/armour");
     expect(paths).toContain("/concord");
+    expect(paths).toContain("/identity");
     expect(paths).toContain("/ledger");
     expect(paths).toContain("/seal");
   });

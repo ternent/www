@@ -1,6 +1,7 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref } from "vue";
+import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
 import { Button } from "@ternent/ui/primitives";
+import { appConfig, appSeoConfig } from "@/app/config/app.generated";
 import { useThemeMode } from "@/modules/ui";
 
 type ThemeName = "aurora" | "concord" | "ledger" | "proof" | "armour";
@@ -53,6 +54,22 @@ onMounted(() => {
 onBeforeUnmount(() => {
   rootThemeObserver?.disconnect();
   rootThemeObserver = null;
+});
+
+watchEffect(() => {
+  if (typeof document === "undefined") return;
+
+  document.title = appConfig.appTitle;
+
+  const descriptionMeta = document.head.querySelector('meta[name="description"]');
+  if (descriptionMeta) {
+    descriptionMeta.setAttribute("content", appSeoConfig.description);
+  }
+
+  const themeColorMeta = document.head.querySelector('meta[name="theme-color"]');
+  if (themeColorMeta) {
+    themeColorMeta.setAttribute("content", appSeoConfig.themeColor);
+  }
 });
 
 const activeMode = computed<"light" | "dark">(() => {
@@ -113,7 +130,7 @@ const identity: NodeConfig = {
   subtitle: "Sign actions with portable keys.",
   description: "The root of trust for replayable software.",
   cta: "Explore",
-  to: "/settings/identity",
+  to: "/identity",
   glyph: "♙",
   theme: "aurora",
 };

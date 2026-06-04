@@ -15,10 +15,10 @@ const architectureLinks = [
   { label: "Ledger", to: "/ledger", theme: "ledger" as HeaderTheme },
   { label: "Seal", to: "/seal", theme: "proof" as HeaderTheme },
   { label: "Armour", to: "/armour", theme: "armour" as HeaderTheme },
-  { label: "Identity", to: "/settings/identity", theme: "aurora" as HeaderTheme },
+  { label: "Identity", to: "/identity", theme: "aurora" as HeaderTheme },
 ];
 
-const defaultHeaderItem = { label: "Explore architecture", theme: "aurora" as HeaderTheme };
+const defaultHeaderItem = { label: "Explore architecture", theme: "" as HeaderTheme };
 
 const activeHeaderItem = computed(() => {
   const match = architectureLinks.find(
@@ -30,6 +30,10 @@ const activeHeaderItem = computed(() => {
 });
 
 const activeHeaderTheme = computed(() => `${activeHeaderItem.value.theme}-${mode.value}`);
+
+function isActiveLink(to: string) {
+  return route.path === to || route.path.startsWith(`${to}/`);
+}
 </script>
 <template>
   <div class="min-h-screen">
@@ -59,7 +63,14 @@ const activeHeaderTheme = computed(() => `${activeHeaderItem.value.theme}-${mode
                 v-for="link in architectureLinks"
                 :key="link.to"
                 :to="link.to"
-                class="rounded-md px-3 py-2 text-sm text-[var(--ui-fg)] no-underline hover:bg-[var(--ui-surface)]"
+                :data-theme="`${link.theme}-${mode}`"
+                :aria-current="isActiveLink(link.to) ? 'page' : undefined"
+                class="rounded-md px-3 py-2 text-sm no-underline transition-colors duration-150"
+                :class="
+                  isActiveLink(link.to)
+                    ? 'bg-[color:color-mix(in_srgb,var(--ui-primary)_18%,var(--ui-bg))] text-[var(--ui-fg)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ui-primary)_40%,var(--ui-border))]'
+                    : 'text-[var(--ui-fg-muted)] hover:bg-[color:color-mix(in_srgb,var(--ui-primary)_12%,var(--ui-surface))] hover:text-[var(--ui-fg)] active:bg-[color:color-mix(in_srgb,var(--ui-primary)_20%,var(--ui-surface))]'
+                "
               >
                 {{ link.label }}
               </RouterLink>

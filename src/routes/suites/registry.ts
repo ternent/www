@@ -1,5 +1,6 @@
 import armourSuite from "./armour/content";
 import concordSuite from "./concord/content";
+import identitySuite from "./identity/content";
 import ledgerSuite from "./ledger/content";
 import sealSuite from "./seal/content";
 import type { SuiteDefinition } from "./types";
@@ -7,6 +8,7 @@ import type { SuiteDefinition } from "./types";
 export const suiteDefinitions: readonly SuiteDefinition[] = [
   armourSuite,
   concordSuite,
+  identitySuite,
   ledgerSuite,
   sealSuite,
 ] as const;
