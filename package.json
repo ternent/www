@@ -14,8 +14,10 @@
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
+    "@ternent/armour": "^0.1.5",
+    "@ternent/identity": "^0.3.1",
+    "@ternent/ui": "^0.5.7",
     "@vueuse/core": "^10.11.1",
-    "@ternent/ui": "^0.5.5",
     "vue": "^3.5.24",
     "vue-router": "^4.4.3"
   },

@@ -11,9 +11,15 @@ importers:
       '@tailwindcss/vite':
         specifier: ^4.1.18
         version: 4.3.0(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))
+      '@ternent/armour':
+        specifier: ^0.1.5
+        version: 0.1.5
+      '@ternent/identity':
+        specifier: ^0.3.1
+        version: 0.3.1
       '@ternent/ui':
-        specifier: ^0.5.5
-        version: 0.5.5(@types/node@25.9.1)(postcss@8.5.15)(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(rollup@4.61.1)(typescript@5.9.3)
+        specifier: ^0.5.7
+        version: 0.5.7(@types/node@25.9.1)(postcss@8.5.15)(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(rollup@4.61.1)(typescript@5.9.3)
       '@vueuse/core':
         specifier: ^10.11.1
         version: 10.11.1(vue@3.5.35(typescript@5.9.3))
@@ -56,7 +62,7 @@ importers:
         version: 0.21.2(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(workbox-build@7.4.1)(workbox-window@7.4.1)
       vite-ssg:
         specifier: ^28.2.2
-        version: 28.3.0(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(unhead@2.1.15)(vue-router@4.6.4(vue@3.5.35(typescript@5.9.3)))(vue@3.5.35(typescript@5.9.3))
+        version: 28.3.0(@noble/hashes@2.2.0)(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(unhead@2.1.15)(vue-router@4.6.4(vue@3.5.35(typescript@5.9.3)))(vue@3.5.35(typescript@5.9.3))
       vitest:
         specifier: ^1.6.0
         version: 1.6.1(@types/node@25.9.1)(jsdom@24.1.3)(lightningcss@1.32.0)(terser@5.48.0)
@@ -920,6 +926,14 @@ packages:
       '@emnapi/core': ^1.7.1
       '@emnapi/runtime': ^1.7.1
 
+  '@noble/curves@2.2.0':
+    resolution: {integrity: sha512-T/BoHgFXirb0ENSPBquzX0rcjXeM6Lo892a2jlYJkqk83LqZx0l1Of7DzlKJ6jkpvMrkHSnAcgb5JegL8SeIkQ==}
+    engines: {node: '>= 20.19.0'}
+
+  '@noble/hashes@2.2.0':
+    resolution: {integrity: sha512-IYqDGiTXab6FniAgnSdZwgWbomxpy9FtYvLKs7wCUs2a8RkITG+DFGO1DM9cr+E3/RgADRpFjrKVaJ1z6sjtEg==}
+    engines: {node: '>= 20.19.0'}
+
   '@nodelib/fs.scandir@2.1.5':
     resolution: {integrity: sha512-vq24Bq3ym5HEQm2NKCr3yXDwjc7vTsEThRDnkp2DK9p1uqLR+DHurm/NOTo0KG7HYHU7eppKZj3MyqYuMBf62g==}
     engines: {node: '>= 8'}
@@ -1277,6 +1291,12 @@ packages:
   '@rushstack/ts-command-line@5.3.9':
     resolution: {integrity: sha512-GIHqU+sRGQ3LGWAZu1O+9Yh++qwtyNIIGuNbcWHJjBTm2qRez0cwINUHZ+pQLR8UuzZDcMajrDaNbUYoaL/XtQ==}
 
+  '@scure/base@2.2.0':
+    resolution: {integrity: sha512-b8XEupJibegiXV+tDUseI8oLQc8ei3d/4Jkb2RpbHh3MfE054ov3uIz2dhFkB3FI8iwYkEh0gGCApkrYggkPNg==}
+
+  '@scure/bip39@2.2.0':
+    resolution: {integrity: sha512-T/Bj/YvYMNkIPq6EENO6/rcs2e7qTNuyoUXf0KBFDmp0ZDu0H2X4Lq6yC3i0c8PcWkov5EbW+yQZZbdMmk154A==}
+
   '@sentry/core@6.19.7':
     resolution: {integrity: sha512-tOfZ/umqB2AcHPGbIrsFLcvApdTm9ggpi/kQZFkej7kMphjT+SGBiQfYtjyg9jcRW+ilAR4JXC9BGKsdEQ+8Vw==}
     engines: {node: '>=6'}
@@ -1406,8 +1426,17 @@ packages:
     peerDependencies:
       vite: ^5.2.0 || ^6 || ^7 || ^8
 
-  '@ternent/ui@0.5.5':
-    resolution: {integrity: sha512-LXGGQMxrqSPVAz1M1VBomUenlwVFq+28vD0Z+1WzxVYnoddjpIiU2fDlQN24auPwj+NjdSm0LX7Ri4q9rxOu3Q==}
+  '@ternent/armour@0.1.5':
+    resolution: {integrity: sha512-5C0ApwZX3EK9jv+69ncSBDJBPhf5LX0iUKQvGgG78N7BRlJuqsXXGKES3ONm39JtedfSId5tFdjbPoZ/vC7Uzg==}
+
+  '@ternent/identity@0.3.1':
+    resolution: {integrity: sha512-zqbxKXzIyUuktSa9qEJN18VbFHdWYNvQQoK3SW69LYU4OXNUpVuYxp/dLGlFR4QtDgMREPdnW992bNCZ8ds2Jw==}
+
+  '@ternent/rage@0.1.3':
+    resolution: {integrity: sha512-jObsf6SIKxeXftEMaqsIA1Nh/M6l4Gsk3WBqSOIQOLdUN5hpxhTvrxJtNnwp/82yEHYspNlc6wYpxs36Wno1vQ==}
+
+  '@ternent/ui@0.5.7':
+    resolution: {integrity: sha512-/PwqDbUpU3N5eoQdO8++V5qTEnaV+HDLW8Bl/I6uRCH2lsbqvTQ/bYZ9i6WW3Dh7NCPVASbMHOf74+ioWLhEZQ==}
 
   '@tootallnate/quickjs-emscripten@0.23.0':
     resolution: {integrity: sha512-C5Mc6rdnsaJDjO3UpGW/CQTHtCKaYlScZTly4JIu97Jxo/odCiH0ITnDXSJPTOrEKk/ycSZ0AOgTmkDtkOsvIA==}
@@ -5529,7 +5558,9 @@ snapshots:
   '@esbuild/win32-x64@0.21.5':
     optional: true
 
-  '@exodus/bytes@1.15.1': {}
+  '@exodus/bytes@1.15.1(@noble/hashes@2.2.0)':
+    optionalDependencies:
+      '@noble/hashes': 2.2.0
 
   '@floating-ui/core@1.7.5':
     dependencies:
@@ -5700,6 +5731,12 @@ snapshots:
       '@emnapi/runtime': 1.10.0
       '@tybys/wasm-util': 0.10.2
     optional: true
+
+  '@noble/curves@2.2.0':
+    dependencies:
+      '@noble/hashes': 2.2.0
+
+  '@noble/hashes@2.2.0': {}
 
   '@nodelib/fs.scandir@2.1.5':
     dependencies:
@@ -5964,6 +6001,13 @@ snapshots:
     transitivePeerDependencies:
       - '@types/node'
 
+  '@scure/base@2.2.0': {}
+
+  '@scure/bip39@2.2.0':
+    dependencies:
+      '@noble/hashes': 2.2.0
+      '@scure/base': 2.2.0
+
   '@sentry/core@6.19.7':
     dependencies:
       '@sentry/hub': 6.19.7
@@ -6083,7 +6127,20 @@ snapshots:
       tailwindcss: 4.3.0
       vite: rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0)
 
-  '@ternent/ui@0.5.5(@types/node@25.9.1)(postcss@8.5.15)(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(rollup@4.61.1)(typescript@5.9.3)':
+  '@ternent/armour@0.1.5':
+    dependencies:
+      '@ternent/identity': 0.3.1
+      '@ternent/rage': 0.1.3
+
+  '@ternent/identity@0.3.1':
+    dependencies:
+      '@noble/curves': 2.2.0
+      '@noble/hashes': 2.2.0
+      '@scure/bip39': 2.2.0
+
+  '@ternent/rage@0.1.3': {}
+
+  '@ternent/ui@0.5.7(@types/node@25.9.1)(postcss@8.5.15)(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(rollup@4.61.1)(typescript@5.9.3)':
     dependencies:
       '@ark-ui/vue': 5.37.0(vue@3.5.35(typescript@5.9.3))
       '@tailwindcss/typography': 0.5.19(tailwindcss@4.3.0)
@@ -7321,10 +7378,10 @@ snapshots:
       whatwg-mimetype: 4.0.0
       whatwg-url: 14.2.0
 
-  data-urls@7.0.0:
+  data-urls@7.0.0(@noble/hashes@2.2.0):
     dependencies:
       whatwg-mimetype: 5.0.0
-      whatwg-url: 16.0.1
+      whatwg-url: 16.0.1(@noble/hashes@2.2.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -7908,9 +7965,9 @@ snapshots:
     dependencies:
       whatwg-encoding: 3.1.1
 
-  html-encoding-sniffer@6.0.0:
+  html-encoding-sniffer@6.0.0(@noble/hashes@2.2.0):
     dependencies:
-      '@exodus/bytes': 1.15.1
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
     transitivePeerDependencies:
       - '@noble/hashes'
 
@@ -8260,16 +8317,16 @@ snapshots:
       - supports-color
       - utf-8-validate
 
-  jsdom@28.1.0:
+  jsdom@28.1.0(@noble/hashes@2.2.0):
     dependencies:
       '@acemir/cssom': 0.9.31
       '@asamuzakjp/dom-selector': 6.8.1
       '@bramus/specificity': 2.4.2
-      '@exodus/bytes': 1.15.1
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
       cssstyle: 6.2.0
-      data-urls: 7.0.0
+      data-urls: 7.0.0(@noble/hashes@2.2.0)
       decimal.js: 10.6.0
-      html-encoding-sniffer: 6.0.0
+      html-encoding-sniffer: 6.0.0(@noble/hashes@2.2.0)
       http-proxy-agent: 7.0.2
       https-proxy-agent: 7.0.6
       is-potential-custom-element-name: 1.0.1
@@ -8281,7 +8338,7 @@ snapshots:
       w3c-xmlserializer: 5.0.0
       webidl-conversions: 8.0.1
       whatwg-mimetype: 5.0.0
-      whatwg-url: 16.0.1
+      whatwg-url: 16.0.1(@noble/hashes@2.2.0)
       xml-name-validator: 5.0.0
     transitivePeerDependencies:
       - '@noble/hashes'
@@ -9615,7 +9672,7 @@ snapshots:
     transitivePeerDependencies:
       - supports-color
 
-  vite-ssg@28.3.0(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(unhead@2.1.15)(vue-router@4.6.4(vue@3.5.35(typescript@5.9.3)))(vue@3.5.35(typescript@5.9.3)):
+  vite-ssg@28.3.0(@noble/hashes@2.2.0)(rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0))(unhead@2.1.15)(vue-router@4.6.4(vue@3.5.35(typescript@5.9.3)))(vue@3.5.35(typescript@5.9.3)):
     dependencies:
       '@unhead/dom': 2.1.15(unhead@2.1.15)
       '@unhead/vue': 2.1.15(vue@3.5.35(typescript@5.9.3))
@@ -9623,7 +9680,7 @@ snapshots:
       cac: 6.7.14
       html-minifier-terser: 7.2.0
       html5parser: 2.0.2
-      jsdom: 28.1.0
+      jsdom: 28.1.0(@noble/hashes@2.2.0)
       vite: rolldown-vite@7.2.5(@emnapi/core@1.10.0)(@emnapi/runtime@1.10.0)(@types/node@25.9.1)(jiti@2.7.0)(terser@5.48.0)
       vue: 3.5.35(typescript@5.9.3)
     optionalDependencies:
@@ -9728,9 +9785,9 @@ snapshots:
       tr46: 5.1.1
       webidl-conversions: 7.0.0
 
-  whatwg-url@16.0.1:
+  whatwg-url@16.0.1(@noble/hashes@2.2.0):
     dependencies:
-      '@exodus/bytes': 1.15.1
+      '@exodus/bytes': 1.15.1(@noble/hashes@2.2.0)
       tr46: 6.0.0
       webidl-conversions: 8.0.1
     transitivePeerDependencies:
