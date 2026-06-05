@@ -5,6 +5,8 @@ import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { appConfig, appSeoConfig } from "./src/app/config/app.generated";
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 const appThemeData = `${appConfig.themeName}-${appConfig.defaultThemeMode}`;
 const themeStorageKey = `${appConfig.appId}/theme-mode`;
 const themeBootstrapScript = `(function(){var storageKey=${JSON.stringify(themeStorageKey)};var defaultMode=${JSON.stringify(appConfig.defaultThemeMode)};var themePrefix=${JSON.stringify(appConfig.themeName)};var root=document.documentElement;var mode=defaultMode;root.dataset.themePrefix=themePrefix;root.dataset.themeStorageKey=storageKey;try{var stored=window.localStorage.getItem(storageKey);if(stored==="dark"||stored==="light"){mode=stored;}else if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}catch{if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}root.setAttribute("data-theme",themePrefix+"-"+mode);}());`;
@@ -61,59 +63,54 @@ export default defineConfig({
       "@ternent/seal-cli/proof": resolve(__dirname, "../../packages/seal-cli/src/proof.ts"),
     },
   },
-  plugins: [
-    vue(),
-    tailwindcss(),
-    createIndexHtmlTransformPlugin(),
-    VitePWA({
-      registerType: "autoUpdate",
-      includeAssets: [
-        "favicon.ico",
-        "icons/icon-192.png",
-        "icons/icon-512.png",
-        "icons/maskable-512.png",
+  plugins: [vue(), tailwindcss(), createIndexHtmlTransformPlugin(), VitePWA({
+    registerType: "autoUpdate",
+    includeAssets: [
+      "favicon.ico",
+      "icons/icon-192.png",
+      "icons/icon-512.png",
+      "icons/maskable-512.png",
+    ],
+    manifest: pwaManifest,
+    workbox: {
+      cleanupOutdatedCaches: true,
+      clientsClaim: true,
+      globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+      navigateFallbackDenylist: [/^\/v1\//],
+      skipWaiting: true,
+      runtimeCaching: [
+        {
+          urlPattern: ({ request }) => request.mode === "navigate",
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "app-pages",
+            precacheFallback: {
+              fallbackURL: "/offline.html",
+            },
+          },
+        },
+        {
+          urlPattern: ({ request }) =>
+            request.destination === "image" || request.destination === "font",
+          handler: "CacheFirst",
+          options: {
+            cacheName: "app-media",
+            expiration: {
+              maxEntries: 120,
+              maxAgeSeconds: 60 * 60 * 24 * 30,
+            },
+          },
+        },
+        {
+          urlPattern: ({ url }) => url.pathname.startsWith("/v1/"),
+          handler: "NetworkFirst",
+          options: {
+            cacheName: "app-api",
+          },
+        },
       ],
-      manifest: pwaManifest,
-      workbox: {
-        cleanupOutdatedCaches: true,
-        clientsClaim: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
-        navigateFallbackDenylist: [/^\/v1\//],
-        skipWaiting: true,
-        runtimeCaching: [
-          {
-            urlPattern: ({ request }) => request.mode === "navigate",
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "app-pages",
-              precacheFallback: {
-                fallbackURL: "/offline.html",
-              },
-            },
-          },
-          {
-            urlPattern: ({ request }) =>
-              request.destination === "image" || request.destination === "font",
-            handler: "CacheFirst",
-            options: {
-              cacheName: "app-media",
-              expiration: {
-                maxEntries: 120,
-                maxAgeSeconds: 60 * 60 * 24 * 30,
-              },
-            },
-          },
-          {
-            urlPattern: ({ url }) => url.pathname.startsWith("/v1/"),
-            handler: "NetworkFirst",
-            options: {
-              cacheName: "app-api",
-            },
-          },
-        ],
-      },
-    }),
-  ],
+    },
+  }), cloudflare()],
   test: {
     environment: "jsdom",
     setupFiles: ["./src/tests/unit/setup.ts"],
