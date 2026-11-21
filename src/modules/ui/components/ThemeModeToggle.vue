@@ -16,7 +16,6 @@ const props = defineProps({
 
 const { mode } = useThemeMode();
 
-
 function getSystemMode() {
   if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
     return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
@@ -82,18 +81,17 @@ function toggleMode() {
   mode.value = mode.value === "dark" ? "light" : "dark";
   applyDocumentMode(mode.value);
 }
-
-
 </script>
 
 <template>
   <button
     type="button"
-    class="w-10 h-10 p-2 inline-flex items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-fg)] transition hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-ring)]"
+    class="theme-mode-toggle w-10 h-10 p-2 inline-flex items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-fg)] transition hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-ring)]"
     :aria-label="mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
     @click="toggleMode"
   >
     <svg
+      aria-hidden="true"
       v-if="mode === 'light'"
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
@@ -109,6 +107,7 @@ function toggleMode() {
       />
     </svg>
     <svg
+      aria-hidden="true"
       v-else
       xmlns="http://www.w3.org/2000/svg"
       viewBox="0 0 24 24"
@@ -122,3 +121,19 @@ function toggleMode() {
     </svg>
   </button>
 </template>
+
+<style scoped>
+.theme-mode-toggle {
+  width: 44px;
+  height: 44px;
+  padding: 10px;
+  flex: 0 0 44px;
+  border-radius: 50%;
+}
+.theme-mode-toggle svg {
+  display: block;
+  width: 22px;
+  height: 22px;
+  flex-shrink: 0;
+}
+</style>

@@ -6,8 +6,8 @@
       "startServerReadyPattern": "Local",
       "url": [
         "http://localhost:4173/",
-        "http://localhost:4173/settings",
-        "http://localhost:4173/settings/identity/import"
+        "http://localhost:4173/architecture",
+        "http://localhost:4173/playground"
       ],
       "settings": {
         "preset": "desktop"

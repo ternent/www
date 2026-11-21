@@ -28,7 +28,7 @@ export const appConfig = {
 
 export const appSeoConfig = {
   shortName: "ternent.dev",
-  description: "ternent.dev built on the Ternent Vue landing template.",
+  description: "Open-source tools for local-first, encrypted, verifiable software. Build applications on portable keys and signed history.",
   themeColor: "#67e8f9",
   backgroundColor: "#0b1217",
   lang: "en",

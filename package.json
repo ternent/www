@@ -5,21 +5,25 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host",
-    "build": "vite-ssg build",
+    "build": "vite-ssg build && node scripts/verify-dist.mjs",
     "preview": "vite preview --host",
     "test": "pnpm test:unit",
     "test:unit": "vitest run",
     "test:unit:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "test:runtime": "vitest run --config vitest.playground.config.ts"
   },
   "dependencies": {
     "@tailwindcss/vite": "^4.1.18",
-    "@ternent/armour": "^0.1.5",
-    "@ternent/identity": "^0.3.1",
+    "@ternent/armour": "^0.2.3",
+    "@ternent/identity": "^0.5.0",
     "@ternent/ui": "^0.5.7",
     "@vueuse/core": "^10.11.1",
     "vue": "^3.5.24",
-    "vue-router": "^4.4.3"
+    "vue-router": "^4.4.3",
+    "@ternent/concord": "0.2.9",
+    "@ternent/ledger": "0.1.8",
+    "@ternent/seal-cli": "0.3.10"
   },
   "devDependencies": {
     "@lhci/cli": "^0.14.0",

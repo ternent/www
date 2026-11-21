@@ -1,5 +1,5 @@
 import { resolve } from "node:path";
-import { defineConfig } from "vite";
+import { defineConfig, type Plugin } from "vite";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
@@ -7,7 +7,13 @@ import { appConfig, appSeoConfig } from "./src/app/config/app.generated";
 
 const appThemeData = `${appConfig.themeName}-${appConfig.defaultThemeMode}`;
 const themeStorageKey = `${appConfig.appId}/theme-mode`;
-const themeBootstrapScript = `(function(){var storageKey=${JSON.stringify(themeStorageKey)};var defaultMode=${JSON.stringify(appConfig.defaultThemeMode)};var themePrefix=${JSON.stringify(appConfig.themeName)};var root=document.documentElement;var mode=defaultMode;root.dataset.themePrefix=themePrefix;root.dataset.themeStorageKey=storageKey;try{var stored=window.localStorage.getItem(storageKey);if(stored==="dark"||stored==="light"){mode=stored;}else if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}catch{if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}root.setAttribute("data-theme",themePrefix+"-"+mode);}());`;
+const themeBootstrapScript = `(function(){var storageKey=${JSON.stringify(
+  themeStorageKey
+)};var defaultMode=${JSON.stringify(
+  appConfig.defaultThemeMode
+)};var themePrefix=${JSON.stringify(
+  appConfig.themeName
+)};var root=document.documentElement;var mode=defaultMode;root.dataset.themePrefix=themePrefix;root.dataset.themeStorageKey=storageKey;try{var stored=window.localStorage.getItem(storageKey);if(stored==="dark"||stored==="light"){mode=stored;}else if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}catch{if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}root.setAttribute("data-theme",themePrefix+"-"+mode);}());`;
 
 function createIndexHtmlTransformPlugin() {
   return {
@@ -54,17 +60,43 @@ const pwaManifest = {
   ],
 };
 
+function createWebManifestPlugin(): Plugin {
+  const source = JSON.stringify(pwaManifest);
+  let ssr = false;
+  return {
+    name: "ternent-web-manifest",
+    configResolved(config) { ssr = Boolean(config.build.ssr); },
+    configureServer(server) {
+      server.middlewares.use((request, response, next) => {
+        if (request.url?.split("?")[0] !== "/manifest.webmanifest") return next();
+        response.setHeader("Content-Type", "application/manifest+json");
+        response.end(source);
+      });
+    },
+    generateBundle() {
+      if (!ssr) this.emitFile({ type: "asset", fileName: "manifest.webmanifest", source });
+    },
+  };
+}
+
 export default defineConfig({
   resolve: {
-    alias: {
-      "@": resolve(__dirname, "./src"),
-      "@ternent/seal-cli/proof": resolve(__dirname, "../../packages/seal-cli/src/proof.ts"),
-    },
+    alias: [
+      {
+        find: /^@ternent\/seal-cli(?:\/proof)?$/,
+        replacement: resolve(
+          __dirname,
+          "node_modules/@ternent/seal-cli/dist/proof.js"
+        ),
+      },
+      { find: "@", replacement: resolve(__dirname, "./src") },
+    ],
   },
   plugins: [
     vue(),
     tailwindcss(),
     createIndexHtmlTransformPlugin(),
+    createWebManifestPlugin(),
     VitePWA({
       registerType: "autoUpdate",
       includeAssets: [
@@ -73,11 +105,12 @@ export default defineConfig({
         "icons/icon-512.png",
         "icons/maskable-512.png",
       ],
-      manifest: pwaManifest,
+      // Emit with Rollup's asset API; direct bundle assignment is ignored by Rolldown.
+      manifest: false,
       workbox: {
         cleanupOutdatedCaches: true,
         clientsClaim: true,
-        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
+        globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2,webmanifest}"],
         navigateFallbackDenylist: [/^\/v1\//],
         skipWaiting: true,
         runtimeCaching: [

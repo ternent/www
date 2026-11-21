@@ -17,7 +17,7 @@ async function lockIdentity(): Promise<void> {
 </script>
 
 <template>
-  <main class="min-h-[calc(100vh-8rem)] bg-[var(--ui-bg)] px-4 py-10 text-[var(--ui-fg)]">
+  <main id="main-content" tabindex="-1" class="min-h-[calc(100vh-8rem)] bg-[var(--ui-bg)] px-4 py-10 text-[var(--ui-fg)]">
     <section class="mx-auto flex w-full max-w-5xl flex-col gap-6" data-theme="aurora-light">
       <div class="space-y-2">
         <p class="m-0 text-sm font-semibold uppercase tracking-[0.12em] text-[var(--ui-primary)]">

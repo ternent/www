@@ -365,11 +365,16 @@ onMounted(async () => {
 <template>
   <Dialog
     v-model:open="dialogOpen"
+    title="Local identity"
+    description="Create, recover or unlock a signing identity on this device."
     :show-close="false"
     :close-on-escape="false"
     :close-on-interact-outside="false"
     size="lg"
   >
+    <template #footer>
+      <RouterLink class="text-link" to="/">Back to website</RouterLink>
+    </template>
     <div class="w-full space-y-8" data-test="identity-global-dialog">
       <template v-if="hasStoredIdentity && summary && mode === 'unlock'">
         <section class="mx-auto w-full max-w-lg space-y-6">

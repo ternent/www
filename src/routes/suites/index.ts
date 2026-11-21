@@ -1,16 +1,13 @@
 import type { RouteModule } from "@/routes/types";
-import armourRoutes from "./armour";
-import concordRoutes from "./concord";
-import identityRoutes from "./identity";
-import ledgerRoutes from "./ledger";
-import sealRoutes from "./seal";
-
-const suiteRoutes: RouteModule = [
-  ...armourRoutes,
-  ...concordRoutes,
-  ...identityRoutes,
-  ...ledgerRoutes,
-  ...sealRoutes,
-];
-
+const sections: Record<string, string> = {
+  concord: "concord",
+  ledger: "history",
+  identity: "identity",
+  armour: "encryption",
+  seal: "verification",
+};
+const suiteRoutes: RouteModule = Object.entries(sections).map(([path, section]) => ({
+  path: `/${path}`,
+  redirect: () => ({ path: "/", hash: `#${section}` }),
+}));
 export default suiteRoutes;

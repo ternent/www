@@ -1,469 +1,309 @@
 <script setup lang="ts">
-import { computed, onBeforeUnmount, onMounted, ref, watchEffect } from "vue";
-import { Button } from "@ternent/ui/primitives";
-import { appConfig, appSeoConfig } from "@/app/config/app.generated";
+import { computed, onMounted, ref } from "vue";
+import { appConfig } from "@/app/config/app.config";
 import { useThemeMode } from "@/modules/ui";
-
-type ThemeName = "aurora" | "concord" | "ledger" | "proof" | "armour";
-
-type NodeConfig = {
-  title: string;
-  subtitle: string;
-  description: string;
-  cta: string;
-  to: string;
-  glyph: string;
-  theme: ThemeName;
-};
+import ArchitectureMap from "./ArchitectureMap.vue";
+import { useStoryMotion } from "./useStoryMotion";
 
 const { mode } = useThemeMode();
-const rootThemeMode = ref<"light" | "dark" | null>(null);
-
-function parseThemeMode(value: string | null): "light" | "dark" | null {
-  if (!value) return null;
-  if (value.endsWith("-dark")) return "dark";
-  if (value.endsWith("-light")) return "light";
-  return null;
-}
-
-function syncRootThemeModeFromDocument() {
-  if (typeof document === "undefined") return;
-  rootThemeMode.value = parseThemeMode(document.documentElement.getAttribute("data-theme"));
-}
-
-let rootThemeObserver: MutationObserver | null = null;
-
-onMounted(() => {
-  if (typeof document === "undefined") return;
-  syncRootThemeModeFromDocument();
-
-  rootThemeObserver = new MutationObserver((mutations) => {
-    for (const mutation of mutations) {
-      if (mutation.type === "attributes" && mutation.attributeName === "data-theme") {
-        syncRootThemeModeFromDocument();
-      }
-    }
-  });
-
-  rootThemeObserver.observe(document.documentElement, {
-    attributes: true,
-    attributeFilter: ["data-theme"],
-  });
-});
-
-onBeforeUnmount(() => {
-  rootThemeObserver?.disconnect();
-  rootThemeObserver = null;
-});
-
-watchEffect(() => {
-  if (typeof document === "undefined") return;
-
-  document.title = appConfig.appTitle;
-
-  const descriptionMeta = document.head.querySelector('meta[name="description"]');
-  if (descriptionMeta) {
-    descriptionMeta.setAttribute("content", appSeoConfig.description);
-  }
-
-  const themeColorMeta = document.head.querySelector('meta[name="theme-color"]');
-  if (themeColorMeta) {
-    themeColorMeta.setAttribute("content", appSeoConfig.themeColor);
-  }
-});
-
-const activeMode = computed<"light" | "dark">(() => {
-  if (rootThemeMode.value === "light" || rootThemeMode.value === "dark") {
-    return rootThemeMode.value;
-  }
-  return mode.value === "light" ? "light" : "dark";
-});
-
-function themed(theme: ThemeName) {
-  return `${theme}-${activeMode.value}`;
-}
-
-const runtimeLink = "/concord";
-
-const concord: NodeConfig = {
-  title: "@ternent/concord",
-  subtitle: "Dispatch commands. Replay deterministic state.",
-  description: "Runtime layer for replayable applications.",
-  cta: "Explore",
-  to: "/concord",
-  glyph: "›_",
-  theme: "concord",
-};
-
-const ledger: NodeConfig = {
-  title: "@ternent/ledger",
-  subtitle: "Store staged and committed history.",
-  description: "Append-only replay substrate.",
-  cta: "Explore",
-  to: "/ledger",
-  glyph: "≡",
-  theme: "ledger",
-};
-
-const seal: NodeConfig = {
-  title: "@ternent/seal",
-  subtitle: "Prove content, commits, and releases.",
-  description: "Portable signatures and attestations.",
-  cta: "Explore",
-  to: "/seal",
-  glyph: "◇",
-  theme: "proof",
-};
-
-const armour: NodeConfig = {
-  title: "@ternent/armour",
-  subtitle: "Encrypt sensitive payloads.",
-  description: "Identity-aware access for private data.",
-  cta: "Explore",
-  to: "/armour",
-  glyph: "▣",
-  theme: "armour",
-};
-
-const identity: NodeConfig = {
-  title: "@ternent/identity",
-  subtitle: "Sign actions with portable keys.",
-  description: "The root of trust for replayable software.",
-  cta: "Explore",
-  to: "/identity",
-  glyph: "♙",
-  theme: "aurora",
-};
+const mounted = ref(false);
+const story = ref<HTMLElement | null>(null);
+useStoryMotion(story);
+const themeMode = computed(() => mounted.value ? mode.value : appConfig.defaultThemeMode);
+onMounted(() => { mounted.value = true; });
+const packages = [
+  {
+    id: "identity",
+    name: "Identity",
+    theme: "aurora",
+    pkg: "@ternent/identity",
+    title: "An identity you can take with you.",
+    text: "Create a signing identity locally. Its public key lets other people check your signatures. Its private material lets you sign and derive encryption keys. You can export it and recover it with a mnemonic.",
+    detail:
+      "The stable identity model uses Ed25519 signatures, with derived X25519 and age-compatible encryption keys. A key identifies a signer. Connecting that signer to a person still needs a trusted introduction.",
+    action: "Explore the demo identity",
+    target: "/playground",
+    source: "identity",
+  },
+  {
+    id: "encryption",
+    name: "Armour",
+    theme: "armour",
+    pkg: "@ternent/armour",
+    title: "Private before it leaves your device.",
+    text: "Encrypt the content for its intended recipients. Storage can hold the ciphertext, while the people with the matching keys can read it. The example encrypts each payload before storing its entry.",
+    detail:
+      "Armour provides age-compatible encryption for identities, recipients and passphrases. Signatures and public metadata remain visible. Encryption protects the payload rather than hiding the existence of the document.",
+    action: "Inspect the encrypted payload",
+    target: "/playground/json",
+    source: "armour",
+  },
+  {
+    id: "verification",
+    name: "Seal",
+    theme: "proof",
+    pkg: "@ternent/seal-cli",
+    title: "Proof that travels with the file.",
+    text: "A signature lets someone check whether content matches what a particular key signed. Seal packages that proof so it can travel with a file, a release or an exported history.",
+    detail:
+      "The same proof model is available through JavaScript, a command-line tool and a GitHub Action. Verification needs the content and public proof. It does not need the private signing key.",
+    action: "Try changing a signed record",
+    target: "/playground/verification",
+    source: "seal-cli",
+  },
+  {
+    id: "history",
+    name: "Ledger",
+    theme: "ledger",
+    pkg: "@ternent/ledger",
+    title: "Keep the changes. Rebuild the view.",
+    text: "Each change becomes an entry. A commit groups entries into signed, linked history. Replaying verified entries derives the current application state. Export the history to rebuild that state elsewhere.",
+    detail:
+      "Ledger handles append, commit, verification and replay. Concord adds application commands and replay plugins on top. Deterministic replay depends on using the same rules, and encrypted content requires the matching decryption capability.",
+    action: "Follow the commit history",
+    target: "/playground/history",
+    source: "ledger",
+  },
+];
 </script>
-
 <template>
-  <main class="relative min-h-screen overflow-hidden bg-[var(--ui-bg)]">
-    <div class="pointer-events-none absolute inset-0 z-0">
-      <div
-        class="absolute inset-0 bg-[radial-gradient(circle_at_50%_0%,color-mix(in_srgb,var(--ui-primary)_22%,transparent),transparent_42rem),linear-gradient(to_bottom,color-mix(in_srgb,var(--ui-bg)_84%,transparent),transparent_34rem)]"
-      />
-      <div
-        class="absolute inset-0 opacity-35 [background-image:linear-gradient(color-mix(in_srgb,var(--ui-fg)_8%,transparent)_1px,transparent_1px),linear-gradient(90deg,color-mix(in_srgb,var(--ui-fg)_8%,transparent)_1px,transparent_1px)] [background-size:40px_40px]"
-      />
-    </div>
-    <div class="relative z-10 min-h-screen">
-      <section class="mx-auto max-w-6xl px-6 pb-20">
-        <div class="mx-auto max-w-5xl pt-16 text-center md:pt-24">
-          <p
-            class="mb-5 text-sm font-light tracking-[0.52em] text-[color:color-mix(in_srgb,var(--ui-primary)_86%,var(--ui-fg))]"
-          >
-            ternent.dev
-          </p>
-
-          <h1
-            class="mx-auto max-w-5xl text-5xl font-medium tracking-[-0.065em] text-[var(--ui-fg)] md:text-8xl md:leading-[0.92]"
-          >
-            Software built on
-            <span class="signed-history font-semibold py-2 block tracking-[0.01em]">signed history.</span>
-          </h1>
-
-          <p
-            class="mx-auto mt-8 max-w-3xl text-lg leading-8 text-[var(--ui-fg-muted)] md:text-2xl md:leading-10"
-          >
-            A different foundation for applications.
-          </p>
-          <div
-            class="mt-11 flex flex-wrap justify-center gap-x-8 gap-y-3 text-sm text-[var(--ui-fg-muted)] md:text-base"
-          >
-            <span>Replayable applications</span>
-            <span
-              class="hidden text-[color:color-mix(in_srgb,var(--ui-fg)_24%,transparent)] sm:inline"
-              >•</span
-            >
-            <span>Signed workflows</span>
-            <span
-              class="hidden text-[color:color-mix(in_srgb,var(--ui-fg)_24%,transparent)] sm:inline"
-              >•</span
-            >
-            <span>Portable state</span>
-            <span
-              class="hidden text-[color:color-mix(in_srgb,var(--ui-fg)_24%,transparent)] sm:inline"
-              >•</span
-            >
-            <span>Verifiable history</span>
-          </div>
-       
+  <main id="main-content" ref="story" class="story" tabindex="-1">
+    <section id="overview" class="story-hero" tabindex="-1">
+      <p class="eyebrow">ternent.dev</p>
+      <h1 tabindex="-1"><span class="hero-line">Software built on </span><em class="hero-line">signed history.</em></h1>
+      <p class="hero-description">
+        Your data, your keys, your copy.<br />A different foundation for
+        applications.
+      </p>
+      <div class="hero-actions">
+        <RouterLink class="primary button" to="/playground">Try it in your browser ↘</RouterLink
+        ><RouterLink to="/idea">Start with the idea ↓</RouterLink>
+      </div>
+      <p class="hero-footnote">
+        Open-source tools for local-first, encrypted, verifiable software.
+      </p>
+    </section>
+    <section id="idea" class="story-section idea-section">
+      <div>
+        <p class="eyebrow">The idea</p>
+        <h2>Using an app shouldn't mean handing over everything.</h2>
+      </div>
+      <div class="prose">
+        <p>
+          Most of the software we use keeps our data in someone else's database.
+          Our access, our history and our ability to leave depend on that
+          service.
+        </p>
+        <p>
+          This stack takes a different approach. Applications work with a
+          portable history of signed changes. Sensitive content is encrypted on
+          your device. You keep a copy that another application can verify and
+          rebuild.
+        </p>
+        <p>
+          Services can still help store and move that data. They need much less
+          access to what's inside it.
+        </p>
+      </div>
+    </section>
+    <section id="how-it-works" class="story-section foundation-section">
+      <header class="foundation-intro">
+        <div>
+          <p class="eyebrow">Under the surface</p>
+          <h2>The history comes first.</h2>
         </div>
-
-        <section id="architecture" class="relative mx-auto mt-20 max-w-4xl">
-          <div class="mb-12 text-center">
-            <h2 class="mt-3 text-3xl font-base tracking-[-0.05em] md:text-4xl">
-              Runtime primitives for replayable software.
-            </h2>
-          </div>
-
-          <!-- <div class="relative mx-auto">
-            <div
-              class="absolute -bottom-1 left-1/2 -translate-x-1/2 text-2xl text-[var(--ui-fg-muted)]"
-            >
-              ↓
-            </div>
-          </div> -->
-
-          <RouterLink
-            :to="concord.to"
-            :data-theme="themed(concord.theme)"
-            class="block max-w-160 mx-auto rounded-2xl border border-[color:color-mix(in_srgb,var(--ui-primary)_58%,var(--ui-border))] bg-[var(--ui-primary)]/10 p-5 text-[var(--ui-fg)] no-underline transition-all duration-150 hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--ui-primary)_78%,var(--ui-border))]"
-          >
-            <div class="flex items-start justify-between gap-5">
-              <div class="flex gap-4">
-                <div
-                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--ui-primary)_36%,var(--ui-border))] bg-[color-mix(in_srgb,var(--ui-primary)_16%,transparent)] text-2xl text-[var(--ui-primary)]"
-                >
-                  {{ concord.glyph }}
-                </div>
-                <div>
-                  <h3 class="text-xl font-medium tracking-[-0.04em]">{{ concord.title }}</h3>
-                  <p class="mt-1 text-sm font-base text-[var(--ui-primary)]">
-                    {{ concord.subtitle }}
-                  </p>
-                  <div
-                    class="mt-4 flex flex-wrap items-center gap-2 text-xs text-[var(--ui-fg-muted)]"
-                  >
-                    <span
-                      class="rounded-lg border border-[color:color-mix(in_srgb,var(--ui-border)_84%,transparent)] bg-[color-mix(in_srgb,var(--ui-bg)_86%,transparent)] px-3 py-1.5"
-                      >command</span
-                    ><span>→</span
-                    ><span
-                      class="rounded-lg border border-[color:color-mix(in_srgb,var(--ui-border)_84%,transparent)] bg-[color-mix(in_srgb,var(--ui-bg)_86%,transparent)] px-3 py-1.5"
-                      >stage</span
-                    ><span>→</span
-                    ><span
-                      class="rounded-lg border border-[color:color-mix(in_srgb,var(--ui-border)_84%,transparent)] bg-[color-mix(in_srgb,var(--ui-bg)_86%,transparent)] px-3 py-1.5"
-                      >commit</span
-                    ><span>→</span
-                    ><span
-                      class="rounded-lg border border-[color:color-mix(in_srgb,var(--ui-border)_84%,transparent)] bg-[color-mix(in_srgb,var(--ui-bg)_86%,transparent)] px-3 py-1.5"
-                      >replay</span
-                    >
-                  </div>
-                </div>
-              </div>
-              <span class="text-sm font-medium text-[var(--ui-primary)]">{{ concord.cta }} →</span>
-            </div>
-          </RouterLink>
-
-          <div class="relative hidden h-16 md:block">
-            <svg
-              class="absolute inset-0 h-full w-full overflow-visible text-[var(--ui-fg-muted)]"
-              viewBox="0 0 800 70"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <path
-                class="fill-none stroke-current stroke-[1.6] opacity-80"
-                d="M400 0 C400 48 400 20 400 70"
-              />
-              <!-- <circle cx="400" cy="0" r="5" class="fill-current opacity-50" />
-              <path
-                d="M205 110 l-7 -10 m7 10 l8 -9"
-                class="fill-none stroke-current stroke-[1.6]"
-              /> -->
-              <!-- <path d="M595 110 l-8 -9 m8 9 l7 -10" class="fill-none stroke-current stroke-[1.6]" /> -->
-            </svg>
-          </div>
-
-          <RouterLink
-            :to="ledger.to"
-            :data-theme="themed(ledger.theme)"
-            class="block max-w-140 mx-auto rounded-2xl border border-[color:color-mix(in_srgb,var(--ui-primary)_58%,var(--ui-border))] bg-[var(--ui-primary)]/10 p-5 text-[var(--ui-fg)] no-underline transition-all duration-150 hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--ui-primary)_78%,var(--ui-border))]"
-          >
-            <div class="flex items-start justify-between gap-5">
-              <div class="flex gap-4">
-                <div
-                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--ui-primary)_36%,var(--ui-border))] bg-[color-mix(in_srgb,var(--ui-primary)_16%,transparent)] text-2xl text-[var(--ui-primary)]"
-                >
-                  {{ ledger.glyph }}
-                </div>
-                <div>
-                  <h3 class="text-xl font-medium tracking-[-0.04em]">{{ ledger.title }}</h3>
-                  <p class="mt-1 text-sm font-base text-[var(--ui-primary)]">
-                    {{ ledger.subtitle }}
-                  </p>
-                  <div
-                    class="mt-4 grid max-w-md grid-cols-2 overflow-hidden rounded-xl border border-[color:color-mix(in_srgb,var(--ui-border)_84%,transparent)] text-center font-mono text-xs text-[var(--ui-fg-muted)]"
-                  >
-                    <span
-                      class="border-r border-[color:color-mix(in_srgb,var(--ui-border)_84%,transparent)] px-3 py-2"
-                      >staged + committed</span
-                    >
-                    <span class="px-3 py-2">replay substrate</span>
-                  </div>
-                </div>
-              </div>
-              <span class="text-sm font-medium text-[var(--ui-primary)]">{{ ledger.cta }} →</span>
-            </div>
-          </RouterLink>
-
-          <div class="relative hidden h-28 md:block">
-            <svg
-              class="absolute inset-0 h-full w-full overflow-visible text-[var(--ui-fg-muted)]"
-              viewBox="0 0 800 120"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <path
-                class="fill-none stroke-current stroke-[1.6] opacity-80"
-                d="M400 0 C400 48 230 42 205 120"
-              />
-              <path
-                class="fill-none stroke-current stroke-[1.6] opacity-80"
-                d="M400 0 C400 48 570 42 595 120"
-              />
-              <!-- <circle cx="400" cy="0" r="5" class="fill-current opacity-50" />
-              <path
-                d="M205 110 l-7 -10 m7 10 l8 -9"
-                class="fill-none stroke-current stroke-[1.6]"
-              /> -->
-              <!-- <path d="M595 110 l-8 -9 m8 9 l7 -10" class="fill-none stroke-current stroke-[1.6]" /> -->
-            </svg>
-          </div>
-
-          <div class="grid gap-6 md:grid-cols-2">
-            <RouterLink
-              :to="seal.to"
-              :data-theme="themed(seal.theme)"
-              class="block rounded-2xl border border-[color:color-mix(in_srgb,var(--ui-primary)_58%,var(--ui-border))] bg-[var(--ui-primary)]/10 p-5 text-[var(--ui-fg)] no-underline transition-all duration-150 hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--ui-primary)_78%,var(--ui-border))]"
-            >
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex gap-4">
-                  <div
-                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--ui-primary)_36%,var(--ui-border))] bg-[color-mix(in_srgb,var(--ui-primary)_16%,transparent)] text-2xl text-[var(--ui-primary)]"
-                  >
-                    {{ seal.glyph }}
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-medium tracking-[-0.04em]">{{ seal.title }}</h3>
-                    <p class="mt-1 text-sm font-base text-[var(--ui-primary)]">
-                      {{ seal.subtitle }}
-                    </p>
-                    <p class="mt-3 text-sm text-[var(--ui-fg-muted)]">{{ seal.description }}</p>
-                  </div>
-                </div>
-                <span class="text-xs font-medium text-[var(--ui-primary)]">{{ seal.cta }} →</span>
-              </div>
-            </RouterLink>
-
-            <RouterLink
-              :to="armour.to"
-              :data-theme="themed(armour.theme)"
-              class="block rounded-2xl border border-[color:color-mix(in_srgb,var(--ui-primary)_58%,var(--ui-border))] bg-[var(--ui-primary)]/10 p-5 text-[var(--ui-fg)] no-underline transition-all duration-150 hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--ui-primary)_78%,var(--ui-border))]"
-            >
-              <div class="flex items-start justify-between gap-4">
-                <div class="flex gap-4">
-                  <div
-                    class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--ui-primary)_36%,var(--ui-border))] bg-[color-mix(in_srgb,var(--ui-primary)_16%,transparent)] text-2xl text-[var(--ui-primary)]"
-                  >
-                    {{ armour.glyph }}
-                  </div>
-                  <div>
-                    <h3 class="text-lg font-medium tracking-[-0.04em]">{{ armour.title }}</h3>
-                    <p class="mt-1 text-sm font-base text-[var(--ui-primary)]">
-                      {{ armour.subtitle }}
-                    </p>
-                    <p class="mt-3 text-sm text-[var(--ui-fg-muted)]">{{ armour.description }}</p>
-                  </div>
-                </div>
-                <span class="text-xs font-medium text-[var(--ui-primary)]">{{ armour.cta }} →</span>
-              </div>
-            </RouterLink>
-          </div>
-
-          <div class="relative hidden h-20 md:block">
-            <svg
-              class="absolute inset-0 h-full w-full overflow-visible text-[var(--ui-fg-muted)]"
-              viewBox="0 0 800 80"
-              preserveAspectRatio="none"
-              aria-hidden="true"
-            >
-              <path
-                class="fill-none stroke-current stroke-[1.6] opacity-80"
-                d="M200 0 C200 55 360 20 400 90"
-              />
-              <path
-                class="fill-none stroke-current stroke-[1.6] opacity-80"
-                d="M600 0 C600 55 440 20 400 90"
-              />
-              <path
-                d="M400 90 l-7 -10 m7 10 l7 -10"
-                class="fill-none stroke-current stroke-[1.6]"
-              />
-            </svg>
-          </div>
-
-          <RouterLink
-            :to="identity.to"
-            :data-theme="themed(identity.theme)"
-            class="mx-auto mt-4 max-w-140 mx-auto block w-full max-w-xl rounded-2xl border border-[color:color-mix(in_srgb,var(--ui-primary)_58%,var(--ui-border))] bg-[var(--ui-primary)]/10 p-5 text-[var(--ui-fg)] no-underline transition-all duration-150 hover:-translate-y-0.5 hover:border-[color:color-mix(in_srgb,var(--ui-primary)_78%,var(--ui-border))]"
-          >
-            <div class="flex items-start justify-between gap-4">
-              <div class="flex gap-4">
-                <div
-                  class="flex h-12 w-12 shrink-0 items-center justify-center rounded-xl border border-[color:color-mix(in_srgb,var(--ui-primary)_36%,var(--ui-border))] bg-[color-mix(in_srgb,var(--ui-primary)_16%,transparent)] text-2xl text-[var(--ui-primary)]"
-                >
-                  {{ identity.glyph }}
-                </div>
-                <div>
-                  <h3 class="text-lg font-medium tracking-[-0.04em]">{{ identity.title }}</h3>
-                  <p class="mt-1 text-sm font-base text-[var(--ui-primary)]">
-                    {{ identity.subtitle }}
-                  </p>
-                  <p class="mt-3 text-sm text-[var(--ui-fg-muted)]">{{ identity.description }}</p>
-                </div>
-              </div>
-              <span class="text-xs font-medium text-[var(--ui-primary)]">{{ identity.cta }} →</span>
-            </div>
-          </RouterLink>
-        </section>
-
-           <div class="mt-10 flex flex-wrap justify-center gap-3">
-            <Button as="RouterLink" :to="runtimeLink" variant="secondary" size="md"
-              >Launch Runtime</Button
-            >
-          </div>
-
-         
-
-        <section
-          class="mx-auto mt-20 max-w-3xl rounded-3xl border border-[color:color-mix(in_srgb,var(--ui-border)_82%,transparent)] bg-[color-mix(in_srgb,var(--ui-bg)_88%,transparent)] p-8 text-center backdrop-blur md:p-10"
-        >
-          <h2 class="text-3xl font-medium tracking-[0.05em]">
-            Want signed-history architecture in your product?
-          </h2>
-          <p class="mx-auto mt-4 max-w-xl text-[var(--ui-fg-muted)]">
-            I design local-first, replayable, verifiable systems from primitives and proof models to
-            the runtime UI that makes them usable.
+        <div class="prose">
+          <p>
+            An application's current state tells you where things stand. Its history
+            tells you how they got there.
           </p>
-          <div class="mt-7 flex justify-center">
+          <p>
+            Record changes in a signed, verifiable history, and that history becomes
+            something you can keep, inspect and use to rebuild the application's
+            state. Sensitive content can stay encrypted, readable only with the
+            matching keys.
+          </p>
+        </div>
+      </header>
+      <ol class="flow">
+        <li>
+          <strong>Record</strong>
+          <p>Capture a change as a structured entry.</p>
+        </li>
+        <li>
+          <strong>Encrypt</strong>
+          <p>Protect sensitive content for its intended recipients.</p>
+        </li>
+        <li>
+          <strong>Commit</strong>
+          <p>Group entries into signed, linked history.</p>
+        </li>
+        <li>
+          <strong>Replay</strong>
+          <p>Check the history and apply its entries to reconstruct the current state.</p>
+        </li>
+      </ol>
+      <div class="foundation-diagram">
+        <h3>A small set of building blocks.</h3>
+        <ArchitectureMap :mode="themeMode" />
+      </div>
+    </section>
+    <section
+      v-for="item in packages"
+      :id="item.id"
+      :key="item.id"
+      class="story-section concept-section"
+      :data-theme="`${item.theme}-${themeMode}`"
+    >
+      <div>
+        <p class="eyebrow">{{ item.name }}</p>
+        <h2>{{ item.title }}</h2>
+        <RouterLink class="text-link" :to="item.target">{{ item.action }} ↗</RouterLink>
+      </div>
+      <div class="prose">
+        <p>{{ item.text }}</p>
+        <p>{{ item.detail }}</p>
+        <details>
+          <summary>Developer details</summary>
+          <p>
+            <code>{{ item.pkg }}</code> is independently usable. See the package
+            README for its published API and supported formats.
+          </p>
+          <div class="actions">
             <a
-              href="mailto:sam@ternent.dev"
-              class="rounded-full bg-[var(--ui-primary)] px-5 py-3 text-sm font-medium text-[var(--ui-on-primary)] no-underline"
-              >Get in touch</a
+              :href="`https://www.npmjs.com/package/${item.pkg}?activeTab=readme`"
+              >Published package ↗</a
+            ><a
+              :href="`https://github.com/ternent/core/tree/main/packages/${item.source}`"
+              >Source on GitHub ↗</a
             >
           </div>
-        </section>
-      </section>
-    </div>
+        </details>
+      </div>
+    </section>
+    <section id="concord" class="story-section concept-section" :data-theme="`concord-${themeMode}`">
+      <div>
+        <p class="eyebrow">Concord</p>
+        <h2>Bring the pieces into an application.</h2>
+      </div>
+      <div class="prose">
+        <p>
+          Concord connects domain commands, commit boundaries and replay
+          plugins. Your application dispatches domain commands and queries
+          state derived from verified history.
+        </p>
+        <p>
+          Identity supplies the keys. Armour encrypts content. Seal supplies
+          portable proofs. Ledger records and replays the history. Concord
+          coordinates the application.
+        </p>
+        <p>
+          The runtime is being rewritten. The example uses the published
+          Concord command and replay API, backed by Ledger.
+        </p>
+        <a
+          href="https://www.npmjs.com/package/@ternent/concord?activeTab=readme"
+          >Explore the published Concord package ↗</a
+        >
+      </div>
+    </section>
+    <section id="open-source" class="story-section concept-section">
+      <div>
+        <p class="eyebrow">Built in the open</p>
+        <h2>Follow the code.</h2>
+      </div>
+      <div class="prose">
+        <p>
+          The libraries and examples are open source. Parts of the stack are
+          currently being rewritten, so published packages and their READMEs are
+          the starting point for stable APIs. Main branches also contain work in
+          progress.
+        </p>
+        <div class="source-links">
+          <a href="https://github.com/ternent/core"
+            ><strong>ternent/core ↗</strong
+            ><span>Libraries and the current rewrite</span></a
+          ><a href="https://github.com/ternent/www"
+            ><strong>ternent/www ↗</strong
+            ><span>This website and examples</span></a
+          ><a href="https://github.com/samternent/home"
+            ><strong>samternent/home ↗</strong
+            ><span
+              >Earlier applications, experiments and implementations</span
+            ></a
+          >
+        </div>
+      </div>
+    </section>
+    <section id="about" class="story-section about-section">
+      <p class="eyebrow">Work with the architecture</p>
+      <h2>Build software around<br />data people can own.</h2>
+      <p>
+        Discuss an integration, explore the libraries or contribute to the
+        open-source stack.
+      </p>
+      <a class="text-link" href="mailto:sam@ternent.dev">sam@ternent.dev ↗</a>
+    </section>
   </main>
 </template>
-<style>
-.signed-history {
-  background: linear-gradient(
-    135deg,
-    color-mix(in srgb, var(--ui-fg) 35%, var(--ui-primary)),
-    color-mix(in srgb, var(--ui-fg) 97%, var(--ui-secondary))
-  );
 
-  -webkit-background-clip: text;
-  background-clip: text;
-  color: transparent;
-
-  text-shadow:
-    0 0 12px color-mix(in srgb, var(--ui-primary) 8%, transparent);
+<style scoped>
+.foundation-intro {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  column-gap: var(--space-column);
+  row-gap: 32px;
+  align-items: start;
+}
+.foundation-intro h2 {
+  max-width: 9ch;
+  margin-bottom: 0;
+}
+.foundation-intro .prose p:last-child {
+  margin-bottom: 0;
+}
+.foundation-section .flow {
+  counter-reset: step;
+  margin: var(--space-block) 0 0;
+  gap: 32px;
+}
+.foundation-section .flow li {
+  counter-increment: step;
+  border-top: 1px solid var(--ui-border);
+  padding: 20px 0 0;
+}
+.foundation-section .flow li::before {
+  content: counter(step, decimal-leading-zero);
+  display: block;
+  margin-bottom: 18px;
+  color: var(--ui-secondary);
+  font: 12px/1.4 ui-monospace, monospace;
+}
+.foundation-section .flow p {
+  margin: 12px 0 0;
+  max-width: 27ch;
+}
+.foundation-diagram {
+  padding: var(--space-chapter) 0 0;
+}
+.foundation-section .foundation-diagram h3 {
+  margin: 0;
+  text-align: center;
+  text-wrap: balance;
+  font-size: clamp(34px, 4.8vw, 60px);
+  line-height: 1.15;
+  font-weight: 450;
+  letter-spacing: -0.04em;
+}
+.foundation-diagram :deep(.architecture-map) {
+  margin-top: var(--space-block);
+}
+@media (max-width: 900px) {
+  .foundation-section .flow { gap: 24px; }
+}
+@media (max-width: 650px) {
+  .foundation-intro { grid-template-columns: 1fr; gap: 32px; }
+  .foundation-intro h2 { max-width: none; }
+  .foundation-section .flow { gap: 32px 20px; }
 }
 </style>

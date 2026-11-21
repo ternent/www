@@ -1,105 +1,208 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import { useRoute } from "vue-router";
+import { onMounted, onBeforeUnmount, nextTick, ref } from "vue";
+import { useRoute, useRouter } from "vue-router";
 import { Logo } from "@ternent/ui/patterns";
-import { Button, Popover } from "@ternent/ui/primitives";
+import {
+  sectionPaths,
+  isStorySection,
+  isSectionScroll,
+  replaceVisibleSection,
+} from "@/routes/home/navigation";
 import ThemeModeToggle from "@/modules/ui/components/ThemeModeToggle.vue";
-import { useThemeMode } from "@/modules/ui";
-
-type HeaderTheme = "aurora" | "concord" | "ledger" | "proof" | "armour";
+import { usePointerGlow } from "@/modules/ui/usePointerGlow";
 
 const route = useRoute();
-const { mode } = useThemeMode();
-const architectureLinks = [
-  { label: "Concord", to: "/concord", theme: "concord" as HeaderTheme },
-  { label: "Ledger", to: "/ledger", theme: "ledger" as HeaderTheme },
-  { label: "Seal", to: "/seal", theme: "proof" as HeaderTheme },
-  { label: "Armour", to: "/armour", theme: "armour" as HeaderTheme },
-  { label: "Identity", to: "/identity", theme: "aurora" as HeaderTheme },
-];
+const router = useRouter();
+const background = ref<HTMLElement | null>(null);
+usePointerGlow(background);
+const sections = [
+  ["idea", "The idea"],
+  ["how-it-works", "Architecture"],
+  ["open-source", "Open source"],
+] as const;
+const footerGroups = [
+  { title: "Explore", links: [
+    { label: "Overview", to: "/" },
+    { label: "The idea", to: "/idea" },
+    { label: "Architecture", to: "/architecture" },
+    { label: "Open source", to: "/open-source" },
+    { label: "Work together", to: "/about" },
+  ] },
+  { title: "Building blocks", links: [
+    { label: "Identity", to: "/identity" },
+    { label: "Armour", to: "/armour" },
+    { label: "Seal", to: "/seal" },
+    { label: "Ledger", to: "/ledger" },
+    { label: "Concord", to: "/concord" },
+  ] },
+  { title: "Examples", links: [
+    { label: "Rebuild from history", to: "/playground" },
+    { label: "Encrypted data", to: "/playground/json" },
+    { label: "Commit history", to: "/playground/history" },
+    { label: "Verification", to: "/playground/verification" },
+    { label: "Local identity", to: "/demo/identity" },
+  ] },
+] as const;
+const architectureSections = new Set([
+  "how-it-works",
+  "identity",
+  "encryption",
+  "verification",
+  "history",
+  "concord",
+]);
+const active = ref("overview");
+const menuOpen = ref(false);
+const menuButton = ref<HTMLButtonElement | null>(null);
+let frame = 0;
+let navigationUntil = 0;
+let pageSections: HTMLElement[] = [];
+let navigationTimer: ReturnType<typeof setTimeout> | undefined;
+let removeAfterEach: (() => void) | undefined;
 
-const defaultHeaderItem = { label: "Explore architecture", theme: "" as HeaderTheme };
-
-const activeHeaderItem = computed(() => {
-  const match = architectureLinks.find(
-    (link) => route.path === link.to || route.path.startsWith(`${link.to}/`),
-  );
-  if (match) return match;
-  if (route.path === "/") return defaultHeaderItem;
-  return defaultHeaderItem;
-});
-
-const activeHeaderTheme = computed(() => `${activeHeaderItem.value.theme}-${mode.value}`);
-
-function isActiveLink(to: string) {
-  return route.path === to || route.path.startsWith(`${to}/`);
+function isActive(id: string) {
+  if (!route.meta.storySection) return false;
+  return active.value === id || (id === "how-it-works" && architectureSections.has(active.value));
 }
+function updateSection() {
+  frame = 0;
+  const offset = Math.min(window.innerHeight * 0.25, 210);
+  const current =
+    window.scrollY + window.innerHeight >= document.documentElement.scrollHeight - 2
+      ? pageSections.at(-1)
+      : [...pageSections]
+          .reverse()
+          .find((section) => section.getBoundingClientRect().top <= offset);
+  if (!current || !route.meta.storySection) return;
+  active.value = current.id;
+  if (performance.now() < navigationUntil) return;
+  if (isStorySection(current.id)) void replaceVisibleSection(router, current.id);
+}
+function onScroll() {
+  if (!frame) frame = requestAnimationFrame(updateSection);
+}
+function refreshSections() {
+  pageSections = Array.from(document.querySelectorAll<HTMLElement>("main > section[id]"));
+}
+function startNavigation() {
+  navigationUntil = performance.now() + 1600;
+  menuOpen.value = false;
+  clearTimeout(navigationTimer);
+  navigationTimer = setTimeout(onScroll, 1600);
+}
+async function skipToContent() {
+  menuOpen.value = false;
+  await nextTick();
+  document.getElementById("main-content")?.focus();
+}
+function closeMenu() {
+  menuOpen.value = false;
+  menuButton.value?.focus();
+}
+onMounted(() => {
+  refreshSections();
+  startNavigation();
+  removeAfterEach = router.afterEach(async (to, from, failure) => {
+    if (failure) return;
+    active.value = String(to.meta.storySection ?? "overview");
+    const scrolling = isSectionScroll(to.fullPath);
+    if (!scrolling) startNavigation();
+    await nextTick();
+    refreshSections();
+    if (scrolling || !from.matched.length) return;
+    const section = typeof to.meta.storySection === "string"
+      ? document.getElementById(to.meta.storySection) : null;
+    const heading = (section ?? document.querySelector("main"))?.querySelector<HTMLElement>("h1, h2");
+    if (heading) {
+      heading.setAttribute("tabindex", "-1");
+      heading.focus({ preventScroll: true });
+    }
+  });
+  window.addEventListener("scroll", onScroll, { passive: true });
+  window.addEventListener("resize", onScroll);
+  onScroll();
+});
+onBeforeUnmount(() => {
+  cancelAnimationFrame(frame);
+  window.removeEventListener("scroll", onScroll);
+  window.removeEventListener("resize", onScroll);
+  clearTimeout(navigationTimer);
+  removeAfterEach?.();
+});
 </script>
 <template>
-  <div class="min-h-screen">
-    <div
-      class="sticky top-0 z-50 h-16 w-full border-b border-[var(--ui-border)] bg-[var(--ui-bg)]/90 p-4 backdrop-blur"
-    >
-      <div class="mx-auto flex max-w-6xl items-center justify-between">
-        <RouterLink to="/" class="flex items-end gap-3 no-underline">
-          <Logo class="!size-8" />
-        </RouterLink>
-
-        <nav class="flex items-center gap-3 text-sm">
-          <Popover placement="bottom-end">
-            <template #trigger>
-              <Button
-                :data-theme="activeHeaderTheme"
-                variant="secondary"
-                size="sm"
-                class="!border-[color:color-mix(in_srgb,var(--ui-primary)_34%,var(--ui-border))] !bg-[color:color-mix(in_srgb,var(--ui-primary)_14%,var(--ui-bg))] !text-[var(--ui-fg)]"
-              >
-                {{ activeHeaderItem.label }}
-              </Button>
-            </template>
-
-            <div class="grid min-w-[12rem] gap-1">
-              <RouterLink
-                v-for="link in architectureLinks"
-                :key="link.to"
-                :to="link.to"
-                :data-theme="`${link.theme}-${mode}`"
-                :aria-current="isActiveLink(link.to) ? 'page' : undefined"
-                class="rounded-md px-3 py-2 text-sm no-underline transition-colors duration-150"
-                :class="
-                  isActiveLink(link.to)
-                    ? 'bg-[color:color-mix(in_srgb,var(--ui-primary)_18%,var(--ui-bg))] text-[var(--ui-fg)] shadow-[inset_0_0_0_1px_color-mix(in_srgb,var(--ui-primary)_40%,var(--ui-border))]'
-                    : 'text-[var(--ui-fg-muted)] hover:bg-[color:color-mix(in_srgb,var(--ui-primary)_12%,var(--ui-surface))] hover:text-[var(--ui-fg)] active:bg-[color:color-mix(in_srgb,var(--ui-primary)_20%,var(--ui-surface))]'
-                "
-              >
-                {{ link.label }}
-              </RouterLink>
-            </div>
-          </Popover>
-        </nav>
+  <div ref="background" class="page-background" aria-hidden="true"></div>
+  <a class="skip-link" href="#main-content" @click.prevent="skipToContent">Skip to content</a>
+  <header class="site-header">
+    <div class="header-inner">
+      <RouterLink class="brand-mark" to="/" aria-label="ternent.dev home"
+        ><Logo aria-hidden="true"
+      /></RouterLink>
+      <button
+        ref="menuButton"
+        type="button"
+        class="mobile-menu"
+        :aria-expanded="menuOpen"
+        aria-controls="site-navigation"
+        @click="menuOpen = !menuOpen"
+        @keydown.esc="closeMenu"
+      >
+        Explore <span aria-hidden="true">{{ menuOpen ? "−" : "+" }}</span>
+      </button>
+      <nav
+        id="site-navigation"
+        :class="{ open: menuOpen }"
+        aria-label="Page navigation"
+        @keydown.esc="closeMenu"
+      >
+        <RouterLink
+          v-for="[id, label] in sections"
+          :key="id"
+          :to="sectionPaths[id]"
+          :aria-current="isActive(id) ? 'location' : undefined"
+          >{{ label }}</RouterLink
+        >
+        <a class="github-link" href="https://github.com/ternent"
+          >GitHub <span aria-hidden="true">↗</span></a
+        >
+      </nav>
+    </div>
+  </header>
+  <RouterView />
+  <footer class="site-footer">
+    <div class="footer-inner">
+      <div class="footer-intro">
+        <div>
+          <RouterLink class="footer-brand" to="/">
+            <Logo aria-hidden="true" /> <span>ternent.dev</span>
+          </RouterLink>
+          <p>Open-source tools for local-first,<br />encrypted, verifiable software.</p>
+        </div>
+        <a class="footer-contact" href="mailto:sam@ternent.dev">sam@ternent.dev ↗</a>
+      </div>
+      <nav class="footer-links" aria-label="Footer">
+        <div v-for="group in footerGroups" :key="group.title" class="footer-group">
+          <h2>{{ group.title }}</h2>
+          <ul>
+            <li v-for="link in group.links" :key="link.to">
+              <RouterLink :to="link.to">{{ link.label }}</RouterLink>
+            </li>
+          </ul>
+        </div>
+        <div class="footer-group">
+          <h2>Source</h2>
+          <ul>
+            <li><a href="https://github.com/ternent">GitHub ↗</a></li>
+            <li><a href="https://github.com/ternent/core">Core libraries ↗</a></li>
+            <li><a href="https://github.com/ternent/www">Website & examples ↗</a></li>
+            <li><a href="https://github.com/samternent/home">Earlier work ↗</a></li>
+          </ul>
+        </div>
+      </nav>
+      <div class="footer-bottom">
+        <span>© {{ new Date().getFullYear() }} ternent.dev</span>
+        <div class="footer-appearance"><ThemeModeToggle /></div>
       </div>
     </div>
-
-    <RouterView />
-
-    <footer class="px-4 py-6 bg-[var(--ui-bg)]/90 backdrop-blur border-t border-[var(--ui-border)]">
-      <div
-        class="flex flex-wrap items-center justify-between gap-3 pt-4 text-sm text-[var(--ui-fg-muted)] mx-auto max-w-6xl"
-      >
-        <div class="flex flex-wrap items-center gap-2">
-          <span>ternent.dev</span>
-          <span class="opacity-60">•</span>
-          <span>© 2026</span>
-        </div>
-
-        <div class="flex flex-wrap items-center gap-2">
-          <ThemeModeToggle />
-          <!-- <Button as="RouterLink" to="/concord" variant="plain-secondary" size="sm">Concord</Button>
-          <Button as="RouterLink" to="/ledger" variant="plain-secondary" size="sm">Ledger</Button>
-          <Button as="RouterLink" to="/seal" variant="plain-secondary" size="sm">Seal</Button>
-          <Button as="RouterLink" to="/armour" variant="plain-secondary" size="sm">Armour</Button> -->
-        </div>
-      </div>
-    </footer>
-  </div>
+  </footer>
 </template>

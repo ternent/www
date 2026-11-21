@@ -2,24 +2,55 @@ import { ViteSSG } from "vite-ssg";
 import App from "./App.vue";
 import { routes } from "./routes";
 import { installAppProviders } from "./app/bootstrap/createApp";
+import { consumeSectionScroll, legacySectionPath, subdomainDestination } from "./routes/home/navigation";
 import registerSW from "./utils/registerSW";
+import { pageSeo } from "./app/config/page-seo";
 
 import "@ternent/ui/styles.css";
 import "@/app/config/theme.generated";
 import "@/app/config/suite-themes";
 import "./style.css";
+import "./story.css";
+
+if (!import.meta.env.SSR) {
+  const destination = subdomainDestination(window.location.href);
+  if (destination) window.location.replace(destination);
+}
 
 export const createApp = ViteSSG(
   App,
   {
     routes,
-    scrollBehavior(to, _from, savedPosition) {
-      if (savedPosition) return savedPosition;
-      if (to.hash) return { el: to.hash };
+    scrollBehavior(to, from, savedPosition) {
+      if (consumeSectionScroll(to.fullPath)) return false;
+      if (savedPosition) return { ...savedPosition, behavior: "auto" };
+      const section = to.meta.storySection;
+      if (typeof section === "string") {
+        const behavior =
+          from.matched.length && !window.matchMedia("(prefers-reduced-motion: reduce)").matches
+            ? "smooth"
+            : "auto";
+        if (section === "overview") return { top: 0, behavior };
+        return { el: `#${section}`, top: 100, behavior };
+      }
       return { top: 0 };
     },
   },
-  ({ app, isClient }) => {
+  ({ app, router, head, isClient }) => {
+    const metadata = head?.push(pageSeo("/"));
+    router.afterEach((to, _from, failure) => {
+      if (!failure) metadata?.patch(pageSeo(to.path));
+    });
+    router.beforeEach((to) => {
+      if ((to.meta.storySection || to.path === "/playground") && to.hash) {
+        return {
+          path: legacySectionPath(to.hash) ?? to.path,
+          query: to.query,
+          hash: "",
+          replace: true,
+        };
+      }
+    });
     installAppProviders(app);
 
     if (isClient && import.meta.env.PROD) {
