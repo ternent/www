@@ -1,135 +1,96 @@
-# ternent-vue-app template
+# ternent.dev
 
-Canonical template for new Ternent Vue apps.
+The website for Ternent's open-source tools for local-first, encrypted, verifiable software. It includes an architecture walkthrough, an interactive Concord playground, and a local identity demo.
 
-## Features
+Built with Vue 3, TypeScript, Vue Router, Tailwind CSS, and `@ternent/ui`. Vite SSG generates static pages, with client-side navigation and a production service worker.
 
-- Feature-driven architecture (`src/modules/*`)
-- Route-folder modules (`src/routes/*`) with CamelCase `Route*.vue`
-- Foundational `ternent-identity`, `ternent-utils`, `@ternent/ui` support
-- Identity create/import/export baseline flows
-- Tailwind + custom light/dark theme pair
-- PWA + offline-first defaults
-- Lighthouse CI thresholds (95+ for perf/a11y/best-practices/seo)
+## Local development
 
-## App Manifest
+Install Node.js and pnpm, then run:
 
-The template landing page is driven by `app.yaml`.
-
-- Author landing copy, links, snippets, and theme selection in YAML.
-- Run `pnpm sync:ternent-app -- --app apps/<app-name>` to regenerate typed runtime config.
-- The browser consumes generated TS config only; it does not parse YAML at runtime.
-
-## Fastest Path
-
-If you want the shortest route to a new branded app:
-
-```bash
-pnpm scaffold:ternent-app -- --name ledger-demo --title "Ledger Demo" --host ledger-demo.ternent.dev --theme aurora
-pnpm --filter ledger-demo dev
+```sh
+pnpm install
+pnpm dev
 ```
 
-That creates `apps/ledger-demo`, writes `apps/ledger-demo/app.yaml`, and generates the runtime config immediately.
-It also scaffolds:
+Use the local URL printed by Vite. The site and demos run without a backend or environment variables.
 
-- `.github/workflows/deploy-ledger-demo.yml`
-- a publish entry in `.ops/publish.mjs`
+To build and preview the production site:
 
-The only manual release setup left is:
-
-- create the Vercel project
-- add `VERCEL_LEDGER_DEMO_PROJECT_ID` to GitHub Actions secrets
-
-## Config-First Workflow
-
-If you want to author the app from a manifest before scaffolding it, use a manifest outside `apps/` first.
-
-1. Create a starter manifest:
-
-```bash
-pnpm prepare:ternent-app -- --out .ternent-apps/ledger-demo.yaml --name ledger-demo --title "Ledger Demo" --host ledger-demo.ternent.dev --theme aurora
+```sh
+pnpm build
+pnpm preview
 ```
 
-2. Edit `.ternent-apps/ledger-demo.yaml` with your copy, links, previews, and theme choice.
+The build writes `dist/` and verifies the web manifest, icons, service-worker precache assets, and manifest links in the generated pages. Service-worker registration runs in production builds.
 
-3. Scaffold the app from that manifest:
+## Pages
 
-```bash
-pnpm scaffold:ternent-app -- --manifest .ternent-apps/ledger-demo.yaml
+| Path | Content |
+| --- | --- |
+| `/` | Overview |
+| `/idea` | The idea |
+| `/architecture` | Architecture and building blocks |
+| `/identity`, `/armour`, `/seal`, `/ledger`, `/concord` | Individual building-block sections |
+| `/open-source` | Source repositories |
+| `/about` | Work together |
+| `/playground` | Rebuild application state from encrypted, signed history |
+| `/playground/json`, `/playground/history`, `/playground/verification` | Playground inspectors |
+| `/demo/identity` | Create or unlock a local identity |
+| `/demo/identity/create`, `/demo/identity/recover`, `/demo/identity/login` | Identity demo modes |
+
+The story routes share one page and navigate to their corresponding sections. Scrolling updates the URL without adding history entries. Legacy section hashes, such as `/#history`, resolve to clean paths such as `/ledger`. Unknown routes return to `/`.
+
+The playground uses the published Identity, Armour, Ledger, and Concord packages for encryption, signatures, verification, and replay. Its disposable identity and state stay in memory; reloading clears the session. The separate identity demo stores an encrypted identity in browser local storage.
+
+## Subdomains
+
+The five suite subdomains serve the app through Cloudflare Workers. On page load, the browser replaces the subdomain URL with its destination on `https://ternent.dev`:
+
+| Subdomain | Destination |
+| --- | --- |
+| `seal.ternent.dev` | `/seal` |
+| `identity.ternent.dev` | `/identity` |
+| `concord.ternent.dev` | `/concord` |
+| `ledger.ternent.dev` | `/ledger` |
+| `armour.ternent.dev` | `/armour` |
+
+Root URLs map to the suite route. Explicit paths, query strings, and hashes carry across to the main host; the router then applies its usual legacy-hash handling. Other hosts, including localhost and preview hosts, are untouched.
+
+This is a JavaScript redirect using `location.replace`, so Back does not revisit the subdomain entry. It adds no arrival animation. The redirect lives in [navigation.ts](src/routes/home/navigation.ts) and runs from [main.ts](src/main.ts). DNS and Worker routing are configured separately.
+
+## Editing the site
+
+| Area | Files |
+| --- | --- |
+| Story copy and sections | [RouteHome.vue](src/routes/home/RouteHome.vue) |
+| Architecture diagram | [ArchitectureMap.vue](src/routes/home/ArchitectureMap.vue) |
+| Header, footer, and section tracking | [App.vue](src/App.vue) |
+| Route paths and subdomain mappings | [navigation.ts](src/routes/home/navigation.ts) |
+| Playground interface and runtime | [src/modules/playground](src/modules/playground) |
+| Identity demo | [src/modules/demo-identity](src/modules/demo-identity) and [its routes](src/routes/demo/identity) |
+| Layout and motion styles | [story.css](src/story.css) |
+| App metadata and base theme | [app.generated.ts](src/app/config/app.generated.ts) and [theme.generated.ts](src/app/config/theme.generated.ts) |
+| Building-block themes | [suite-themes.ts](src/app/config/suite-themes.ts) |
+| Page titles, descriptions, and canonical URLs | [page-seo.ts](src/app/config/page-seo.ts) |
+| Static generation, PWA, and build configuration | [vite.config.ts](vite.config.ts) |
+
+Story copy is authored in Vue components. [app.yaml](app.yaml) includes template landing content that does not drive the story page; this package has no manifest-sync or scaffolding command.
+
+## Checks
+
+```sh
+pnpm test:unit
+pnpm test:runtime
+pnpm build
 ```
 
-4. Run the app:
+Unit tests cover routing, subdomain mappings, page metadata, themes, and components. Runtime tests exercise encrypted history replay, tamper detection, and access with an unrelated identity. Use `pnpm test:unit:watch` while developing.
 
-```bash
-pnpm --filter ledger-demo dev
-```
+Playwright specs and `pnpm test:e2e` are also present. For manual browser verification, check the story links and scroll tracking, playground replay and inspectors, identity create/recover/login modes, light and dark themes, mobile navigation, and reduced-motion behavior. Subdomain redirects need a host serving the app under the relevant subdomain.
 
-## Updating an Existing App
+## Hosting
 
-After scaffolding, the app’s source-of-truth manifest lives inside the app:
+Publish the contents of `dist/` to a static host. [vercel.json](vercel.json) configures clean URLs, an app fallback, security headers, and service-worker revalidation for Vercel. Other hosts need equivalent route handling for direct links.
 
-- `apps/<app-name>/app.yaml`
-
-When you change that file, regenerate the runtime config with:
-
-```bash
-pnpm sync:ternent-app -- --app apps/ledger-demo
-```
-
-`sync:ternent-app` updates generated app config only. Deployment workflow and publish registration are scaffolded when the app is first created.
-
-## Concrete Example
-
-Minimal config-first session:
-
-```bash
-pnpm prepare:ternent-app -- --out .ternent-apps/receipt-checker.yaml --name receipt-checker --title "Receipt Checker" --host receipt-checker.ternent.dev --theme harbor-rose
-pnpm scaffold:ternent-app -- --manifest .ternent-apps/receipt-checker.yaml
-pnpm --filter receipt-checker dev
-```
-
-## Release Flow
-
-For each scaffolded app the generator wires in the repo-level release hooks:
-
-- `.github/workflows/deploy-<app-name>.yml` deploys the tagged app to Vercel
-- `.ops/publish.mjs` includes the app so changeset releases emit a GitHub release entry
-
-Recommended sequence:
-
-1. Run `pnpm prepare:ternent-app` or `pnpm scaffold:ternent-app`
-2. Edit `apps/<app-name>/app.yaml`
-3. Run `pnpm sync:ternent-app -- --app apps/<app-name>`
-4. Create the Vercel project and add `VERCEL_<APP_NAME>_PROJECT_ID` to repo secrets
-5. Commit the scaffolded app, workflow, and manifest
-6. Add a changeset that bumps the new app package when you want the first production release
-
-## Vercel + GitHub Setup
-
-If you are already logged into both the Vercel CLI and GitHub CLI, you can automate the project/secret wiring with:
-
-```bash
-pnpm setup:ternent-app-deploy -- --app apps/ledger-demo
-```
-
-That script will:
-
-- link or create the Vercel project for the app via `vercel link --project <app-id> --yes`
-- read `.vercel/project.json`
-- set `VERCEL_<APP_NAME>_PROJECT_ID` in GitHub Actions secrets
-- set `VERCEL_ORG_ID` in GitHub Actions secrets
-
-Optional flags:
-
-- `--project <name>` to use a different Vercel project name
-- `--repo <owner/repo>` to target a different GitHub repository
-- `--scope <scope>` to target a specific Vercel team/scope
-- `--skip-org-secret` if `VERCEL_ORG_ID` is already managed elsewhere
-
-## Monthly Template Refresh
-
-1. Update external dependencies to latest stable.
-2. Run `pnpm --filter ternentdotdev test:unit`.
-3. Run `pnpm --filter ternentdotdev build`.
-4. Run `pnpm --filter ternentdotdev lighthouse:ci`.
-5. Update template changelog notes.
+The production service worker precaches site assets and generated pages and checks for updates automatically. Offline behavior depends on the assets already cached by the browser.
