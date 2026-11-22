@@ -5,26 +5,26 @@ import { sectionPaths } from "@/routes/home/navigation";
 describe("page metadata", () => {
   it("consolidates the full-story aliases under the homepage canonical", () => {
     for (const [section, path] of Object.entries(sectionPaths)) {
-      if (section === "playground") continue;
+      if (section === "examples") continue;
       expect(pageSeo(path).link[0].href).toBe("https://ternent.dev/");
     }
   });
 
   it("gives examples their own metadata without duplicating inspector URLs", () => {
     for (const path of [
-      "/playground",
-      "/playground/json",
-      "/playground/history",
-      "/playground/verification",
+      "/examples",
+      "/examples/json",
+      "/examples/history",
+      "/examples/verification",
     ]) {
       const metadata = pageSeo(path);
       expect(metadata.title).toContain("Examples");
-      expect(metadata.link[0].href).toBe("https://ternent.dev/playground");
+      expect(metadata.link[0].href).toBe("https://ternent.dev/examples");
       expect(metadata.meta.find((tag) => tag.property === "og:url")?.content).toBe(
         metadata.link[0].href,
       );
     }
-    expect(pageSeo("/playground").title).not.toBe(pageSeo("/").title);
+    expect(pageSeo("/examples").title).not.toBe(pageSeo("/").title);
   });
 
   it("keeps identity utility pages out of search results", () => {

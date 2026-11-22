@@ -10,7 +10,7 @@ Preserve landing-page copy, route behavior, branding and light/dark palettes dur
 library migrations. Website markup and CSS are owned here; no internal design-system
 package is required. Remove superseded source rather than keeping legacy folders.
 
-The playground delegates history, cryptography and replay to published packages.
+The examples page delegates history, cryptography and replay to published packages.
 Its keys and drafts stay in memory. Inspect public metadata honestly and never invent
 contents for locked events. Invalid history cannot expose trusted application state.
 Changing inspector routes must retain the session and unfinished work.

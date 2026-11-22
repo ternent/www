@@ -22,7 +22,7 @@ async function setup() {
     routes: [
       { path: "/", component: Story, meta: { storySection: "overview" } },
       { path: "/idea", component: Story, meta: { storySection: "idea" } },
-      { path: "/playground", component: Examples },
+      { path: "/examples", component: Examples },
       { path: "/:pathMatch(.*)*", component: Story },
     ],
   });
@@ -73,7 +73,7 @@ describe("site keyboard navigation", () => {
     await flushPromises();
     expect(document.activeElement).toBe(menu);
     consumeSectionScroll("/idea");
-    await router.push("/playground");
+    await router.push("/examples");
     await flushPromises();
     expect(document.activeElement).toBe(wrapper.get("main h1").element);
   });

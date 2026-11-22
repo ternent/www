@@ -3,9 +3,9 @@ export const siteDescription =
   "Open-source tools for local-first, encrypted, verifiable software. Build applications on portable keys and signed history.";
 
 export function pageSeo(path: string) {
-  const examples = path === "/playground" || path.startsWith("/playground/");
+  const examples = path === "/examples" || path.startsWith("/examples/");
   const demo = path.startsWith("/demo/");
-  const canonical = `${origin}${examples ? "/playground" : demo ? path : "/"}`;
+  const canonical = `${origin}${examples ? "/examples" : demo ? path : "/"}`;
   const title = examples
     ? "Examples: rebuild from signed history | ternent.dev"
     : demo

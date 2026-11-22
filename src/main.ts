@@ -35,7 +35,7 @@ export const createApp = ViteSSG(
       if (!failure) metadata?.patch(pageSeo(to.path));
     });
     router.beforeEach((to) => {
-      if ((to.meta.storySection || to.path === "/playground") && to.hash) {
+      if ((to.meta.storySection || to.path === "/examples") && to.hash) {
         return {
           path: legacySectionPath(to.hash) ?? to.path,
           query: to.query,

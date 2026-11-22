@@ -73,14 +73,13 @@ describe("RouteHome", () => {
     }
   });
 
-  it("keeps the story readable without the playground and switches package themes", async () => {
+  it("keeps examples on their own route and switches package themes", async () => {
     const theme = useThemeMode();
     const previousMode = theme.mode.value;
     theme.setTheme("dark");
     const wrapper = shallowMount(RouteHome, {
       global: {
         stubs: {
-          LedgerPlayground: true,
           ArchitectureMap: false,
           RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
         },
@@ -93,9 +92,8 @@ describe("RouteHome", () => {
       for (const id of ["overview", "idea", "how-it-works", "open-source", "about"]) {
         expect(wrapper.find(`#${id}`).exists()).toBe(true);
       }
-      expect(wrapper.find("#playground").exists()).toBe(false);
-      expect(wrapper.find("ledger-playground-stub").exists()).toBe(false);
-      expect(wrapper.find('a[href="/playground"]').exists()).toBe(true);
+      expect(wrapper.find("#examples").exists()).toBe(false);
+      expect(wrapper.find('a[href="/examples"]').exists()).toBe(true);
       expect(wrapper.find("#developers").exists()).toBe(false);
       const diagramLinks = wrapper.get('nav[aria-label="Runtime building blocks"]').findAll("a");
       expect(diagramLinks).toHaveLength(5);

@@ -38,7 +38,7 @@ export function short(id: string, length = 10) {
   return id.includes(":") ? id.split(":").at(-1)!.slice(0, length) : id.slice(0, length);
 }
 
-export class Playground {
+export class NotesSession {
   #identities: Identities;
   #bytes: Uint8Array;
   #recovery: Uint8Array | null = null;
@@ -86,7 +86,7 @@ export class Playground {
       },
     ])
       value(await handle.dispatch("put", note));
-    return new Playground({ alice, bob, eve }, handle, privateAudience);
+    return new NotesSession({ alice, bob, eve }, handle, privateAudience);
   }
 
   publicIdentity(actor: ActorId = this.reader) {
@@ -168,7 +168,7 @@ export class Playground {
     this.#bytes = this.handle.export();
   }
   async commit() {
-    value(await this.handle.commit({ message: "Commit notes from the playground" }));
+    value(await this.handle.commit({ message: "Commit notes from the example" }));
     this.#bytes = this.handle.export();
   }
   async discard() {

@@ -53,19 +53,22 @@ release is accepted. No npm access token is needed to install these public packa
 | `/`, `/idea`, `/architecture`                                             | Overview, the idea and architecture                   |
 | `/identity`, `/armour`, `/seal`, `/ledger`, `/concord`                    | Building-block sections                               |
 | `/open-source`, `/about`                                                  | Source and working together                           |
-| `/playground`                                                             | Signed document, reader identities and privacy groups |
-| `/playground/json`, `/playground/history`, `/playground/verification`     | Document inspectors                                   |
+| `/examples`                                                               | Signed document, reader identities and privacy groups |
+| `/examples/json`, `/examples/history`, `/examples/verification`           | Document inspectors                                   |
 | `/demo/identity`                                                          | Local identity demo                                   |
 | `/demo/identity/create`, `/demo/identity/recover`, `/demo/identity/login` | Identity modes                                        |
 
 Story routes share one page and navigate to its sections. Scrolling replaces the URL
 without accumulating history entries. Legacy hashes resolve to clean paths. Unknown
-routes return to `/`. All playground inspector routes reuse the same component and
+routes return to `/`. All examples inspector routes reuse the same component and
 retain the current session and unfinished work.
 
-## Playground ownership and review
+Earlier `/playground` URLs redirect to `/examples`, including each inspector route.
+Legacy playground hashes resolve to the matching examples view too.
 
-`src/modules/playground/model.ts` owns note command validation, domain events and a
+## Examples ownership and review
+
+`src/modules/examples/model.ts` owns note command validation, domain events and a
 pure projection. Note identifiers are scoped to their privacy group.
 `session.ts` supplies host capabilities, document bytes, authoring cadence and file
 operations. Concord owns command/authority/encryption replay and composes the
@@ -99,7 +102,7 @@ Readable replay reports its limited coverage. Locked events never get invented t
 or contents, and their count is not a count of distinct notes. Integrity, replay,
 freshness and other recipients' decryptability are reported separately.
 
-The new playground uses Ledger's common container. Earlier `concord-ledger` demo
+The notes example uses Ledger's common container. Earlier `concord-ledger` demo
 exports are not converted or replayed as trusted documents; their raw input remains
 inspectable. This is the same accepted alpha container break as the core libraries.
 
@@ -113,18 +116,18 @@ writes use `age`. No identity material is sent to a server.
 
 ## Editing the website
 
-| Area                                | Files                                                           |
-| ----------------------------------- | --------------------------------------------------------------- |
-| Landing copy and sections           | `src/routes/home/RouteHome.vue`                                 |
-| Architecture diagram                | `src/routes/home/ArchitectureMap.vue`                           |
-| Header, footer and section tracking | `src/App.vue`                                                   |
-| Route paths and subdomain mappings  | `src/routes/home/navigation.ts`                                 |
-| Playground                          | `src/modules/playground`, `src/routes/home/RoutePlayground.vue` |
-| Local identity                      | `src/modules/demo-identity`, `src/routes/demo/identity`         |
-| Site palettes and styles            | `src/themes.css`, `src/style.css`, `src/story.css`              |
-| App metadata and package pins       | `src/app/config/app.config.ts`, `src/app/config/packages.ts`    |
-| Titles and canonical URLs           | `src/app/config/page-seo.ts`                                    |
-| Static build and PWA                | `vite.config.ts`, `scripts/verify-dist.mjs`                     |
+| Area                                | Files                                                        |
+| ----------------------------------- | ------------------------------------------------------------ |
+| Landing copy and sections           | `src/routes/home/RouteHome.vue`                              |
+| Architecture diagram                | `src/routes/home/ArchitectureMap.vue`                        |
+| Header, footer and section tracking | `src/App.vue`                                                |
+| Route paths and subdomain mappings  | `src/routes/home/navigation.ts`                              |
+| Examples                            | `src/modules/examples`, `src/routes/home/RouteExamples.vue`  |
+| Local identity                      | `src/modules/demo-identity`, `src/routes/demo/identity`      |
+| Site palettes and styles            | `src/themes.css`, `src/style.css`, `src/story.css`           |
+| App metadata and package pins       | `src/app/config/app.config.ts`, `src/app/config/packages.ts` |
+| Titles and canonical URLs           | `src/app/config/page-seo.ts`                                 |
+| Static build and PWA                | `vite.config.ts`, `scripts/verify-dist.mjs`                  |
 
 ## Hosting
 

@@ -7,7 +7,7 @@ export type SuiteThemeMode = "light" | "dark";
 declare module "vue-router" {
   interface RouteMeta {
     storySection?: string;
-    playgroundView?: string;
+    examplesView?: string;
     suiteKey?: string;
     suiteTheme?: string;
     suiteMode?: SuiteThemeMode;

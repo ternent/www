@@ -3,11 +3,11 @@ import { verifyLedger } from "@ternent/ledger";
 import { createDocument } from "@ternent/concord";
 import { createStandardSystemProfile } from "@ternent/concord/system";
 import { generateIdentity } from "@ternent/armour";
-import { notesModel } from "../../modules/playground/model";
-import { Playground, value } from "../../modules/playground/session";
+import { notesModel } from "../../modules/examples/model";
+import { NotesSession, value } from "../../modules/examples/session";
 
 test("different readers get actual readable projections over the same signed bytes", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const bytes = app.export();
   expect(JSON.parse(new TextDecoder().decode(bytes)).format).toBe("ledger");
   expect((await verifyLedger(bytes)).integrity).toBe("valid");
@@ -40,7 +40,7 @@ test("different readers get actual readable projections over the same signed byt
 });
 
 test("a shared writer cannot author into Alice's independent group", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   await app.switchReader("bob");
   await app.put({
     id: "bob",
@@ -57,7 +57,7 @@ test("a shared writer cannot author into Alice's independent group", async () =>
 });
 
 test("switching readers publishes the selected identity and replayed state atomically", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const previousHandle = app.handle;
   const switching = app.switchReader("bob");
   expect(app.reader).toBe("alice");
@@ -70,7 +70,7 @@ test("switching readers publishes the selected identity and replayed state atomi
 });
 
 test("a note ID in another group cannot overwrite private application state", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   await app.switchReader("bob");
   await app.put({
     id: "private",
@@ -86,7 +86,7 @@ test("a note ID in another group cannot overwrite private application state", as
 });
 
 test("drafts change only preview; switching readers cannot silently discard them", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   await app.setMode("draft");
   const before = app.export();
   await app.put({
@@ -109,7 +109,7 @@ test("drafts change only preview; switching readers cannot silently discard them
 });
 
 test("removal preserves shared history, rotates future protection and readmission restores access", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   await app.setBobAccess("document", false);
   await app.put({
     id: "after",
@@ -135,7 +135,7 @@ test("removal preserves shared history, rotates future protection and readmissio
 });
 
 test("signature tampering removes trusted state; restoring returns identical verified bytes", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const before = app.export();
   await app.tamper();
   expect(app.handle.state()).toEqual({ status: "inspection", reason: "invalid" });
@@ -147,7 +147,7 @@ test("signature tampering removes trusted state; restoring returns identical ver
 });
 
 test("file round trips preserve signatures and ciphertext; exports contain no private note plaintext", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const before = app.export();
   expect(app.json).not.toContain("The quiet notebook");
   expect(app.json).not.toContain("A little space for Alice");
@@ -158,7 +158,7 @@ test("file round trips preserve signatures and ciphertext; exports contain no pr
 });
 
 test("malformed and oversized imports never replace trusted state silently", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const before = app.export();
   await expect(app.load(new Uint8Array(2 * 1024 * 1024 + 1))).rejects.toThrow("2 MiB");
   expect(app.export()).toEqual(before);
@@ -170,7 +170,7 @@ test("malformed and oversized imports never replace trusted state silently", asy
 });
 
 test("a valid foreign model stays inspectable without being treated as tampered or trusted notes", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const foreign = value(
     await createDocument({
       identity: value(await generateIdentity()),
@@ -185,7 +185,7 @@ test("a valid foreign model stays inspectable without being treated as tampered 
 });
 
 test("the retired Concord container stays inspectable without being converted into trusted notes", async () => {
-  const app = await Playground.create();
+  const app = await NotesSession.create();
   const bytes = new TextEncoder().encode(
     JSON.stringify({
       format: "concord-ledger",

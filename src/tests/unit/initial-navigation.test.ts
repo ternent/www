@@ -6,7 +6,7 @@ import { sectionPaths, subdomainPaths } from "@/routes/home/navigation";
 const template = readFileSync("index.html", "utf8");
 const storyPaths = Object.fromEntries(
   Object.entries(sectionPaths)
-    .filter(([section]) => section !== "playground")
+    .filter(([section]) => section !== "examples")
     .map(([section, path]) => [path, section]),
 );
 
@@ -68,7 +68,7 @@ describe("initial navigation before the app bundle", () => {
     const scrollTo = vi.fn();
     runInNewContext(inlineScript("initial-position"), {
       window: {
-        location: { pathname: "/playground/history" },
+        location: { pathname: "/examples/history" },
         scrollY: 0,
         scrollTo,
         history: { state: null },

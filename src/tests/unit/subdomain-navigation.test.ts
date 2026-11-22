@@ -52,8 +52,8 @@ describe("suite subdomains", () => {
 
   it("preserves explicit paths instead of overriding shared links", () => {
     expect(
-      subdomainDestination("https://seal.ternent.dev/playground/verification?example=1#proof"),
-    ).toBe("https://ternent.dev/playground/verification?example=1#proof");
+      subdomainDestination("https://seal.ternent.dev/examples/verification?example=1#proof"),
+    ).toBe("https://ternent.dev/examples/verification?example=1#proof");
     expect(subdomainDestination("https://ledger.ternent.dev/ledger")).toBe(
       "https://ternent.dev/ledger",
     );

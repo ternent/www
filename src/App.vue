@@ -44,10 +44,10 @@ const footerGroups = [
   {
     title: "Examples",
     links: [
-      { label: "Rebuild from history", to: "/playground" },
-      { label: "Encrypted data", to: "/playground/json" },
-      { label: "Commit history", to: "/playground/history" },
-      { label: "Verification", to: "/playground/verification" },
+      { label: "Rebuild from history", to: "/examples" },
+      { label: "Encrypted data", to: "/examples/json" },
+      { label: "Commit history", to: "/examples/history" },
+      { label: "Verification", to: "/examples/verification" },
       { label: "Local identity", to: "/demo/identity" },
     ],
   },

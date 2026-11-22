@@ -3,7 +3,7 @@ import type { Router } from "vue-router";
 export const sectionPaths = {
   overview: "/",
   idea: "/idea",
-  playground: "/playground",
+  examples: "/examples",
   "how-it-works": "/architecture",
   identity: "/identity",
   encryption: "/armour",
@@ -35,8 +35,9 @@ export function legacySectionPath(hash: string): string | undefined {
   } catch {
     return undefined;
   }
-  if (["playground-history", "playground-json", "playground-verification"].includes(section)) {
-    return `/playground/${section.slice("playground-".length)}`;
+  section = section.replace(/^playground(?=-|$)/, "examples");
+  if (["examples-history", "examples-json", "examples-verification"].includes(section)) {
+    return `/examples/${section.slice("examples-".length)}`;
   }
   return isStorySection(section) ? sectionPaths[section] : undefined;
 }

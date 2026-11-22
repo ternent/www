@@ -37,18 +37,25 @@ async function open(path: string) {
   return { router, wrapper };
 }
 
+test("old playground inspector URLs redirect to examples while retaining query and selection", async () => {
+  const { router, wrapper } = await open("/playground/json?source=bookmark#stored-entry");
+  expect(router.currentRoute.value.fullPath).toBe("/examples/json?source=bookmark#stored-entry");
+  expect(wrapper.find("#raw-json").exists()).toBe(true);
+  expect(wrapper.findAll(".concord-examples")).toHaveLength(1);
+}, 15_000);
+
 test("direct inspector URLs preserve the real document, selected reader and unapplied JSON across navigation", async () => {
-  const { router, wrapper } = await open("/playground/json");
-  expect(router.currentRoute.value.path).toBe("/playground/json");
+  const { router, wrapper } = await open("/examples/json");
+  expect(router.currentRoute.value.path).toBe("/examples/json");
   const originalHead = wrapper.get(".head-label").text();
   const raw = wrapper.get<HTMLTextAreaElement>("#raw-json").element.value + "\n  ";
   await wrapper.get("#raw-json").setValue(raw);
-  await router.push("/playground/history");
+  await router.push("/examples/history");
   await flushPromises();
   const bob = wrapper.findAll(".identity-button").find((button) => button.text().includes("Bob"))!;
   await bob.trigger("click");
   await vi.waitFor(() => expect(bob.attributes("aria-pressed")).toBe("true"));
-  await router.push("/playground/json");
+  await router.push("/examples/json");
   await flushPromises();
   expect(wrapper.get<HTMLTextAreaElement>("#raw-json").element.value).toBe(raw);
   expect(wrapper.get(".head-label").text()).toBe(originalHead);
@@ -56,15 +63,15 @@ test("direct inspector URLs preserve the real document, selected reader and unap
 }, 15_000);
 
 test("unsubmitted note text survives inspector navigation and cannot be silently assigned to another reader", async () => {
-  const { router, wrapper } = await open("/playground");
+  const { router, wrapper } = await open("/examples");
   await wrapper.get("#note-title").setValue("Still just in the editor");
   await flushPromises();
   const bob = wrapper.findAll(".identity-button").find((button) => button.text().includes("Bob"))!;
   expect(bob.attributes("disabled")).toBeDefined();
-  await router.push("/playground/verification");
+  await router.push("/examples/verification");
   await flushPromises();
   expect(wrapper.get(".draft-banner").text()).toContain("Unsubmitted editor text");
-  await router.push("/playground");
+  await router.push("/examples");
   await flushPromises();
   expect(wrapper.get<HTMLInputElement>("#note-title").element.value).toBe(
     "Still just in the editor",

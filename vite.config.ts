@@ -8,7 +8,7 @@ import { sectionPaths, subdomainPaths } from "./src/routes/home/navigation";
 
 const storyPaths = Object.fromEntries(
   Object.entries(sectionPaths)
-    .filter(([section]) => section !== "playground")
+    .filter(([section]) => section !== "examples")
     .map(([section, path]) => [path, section]),
 );
 

@@ -2,7 +2,7 @@
 import { computed, nextTick, onMounted, ref, shallowRef, triggerRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import type { AudienceId } from "@ternent/concord";
-import { actors, Playground, short, type ActorId } from "./session";
+import { actors, NotesSession, short, type ActorId } from "./session";
 import type { Note } from "./model";
 import NoteEditor from "./NoteEditor.vue";
 import InspectorPanel from "./InspectorPanel.vue";
@@ -10,21 +10,21 @@ import InspectorPanel from "./InspectorPanel.vue";
 type View = "entries" | "history" | "json" | "verification";
 const route = useRoute();
 const router = useRouter();
-const app = shallowRef<Playground | null>(null);
+const app = shallowRef<NotesSession | null>(null);
 const revision = ref(0);
 const busy = ref(true);
 const editorDirty = ref(false);
 const notice = ref("Generating demo identities and a signed document…");
 const isError = ref(false);
-const view = ref<View>((route.meta.playgroundView as View) ?? "entries");
+const view = ref<View>((route.meta.examplesView as View) ?? "entries");
 watch(
-  () => route.meta.playgroundView,
+  () => route.meta.examplesView,
   (next) => {
     view.value = (next as View) ?? "entries";
   },
 );
 watch(view, (next) => {
-  const path = next === "entries" ? "/playground" : `/playground/${next}`;
+  const path = next === "entries" ? "/examples" : `/examples/${next}`;
   if (route.path !== path) void router.push(path);
 });
 const audience = ref<AudienceId>("document");
@@ -119,7 +119,7 @@ async function run(operation: () => Promise<unknown>, message: string) {
 async function start() {
   busy.value = true;
   try {
-    app.value = await Playground.create();
+    app.value = await NotesSession.create();
     audience.value = "document";
     selectedNoteId.value = "welcome";
     selectedEntryId.value = null;
@@ -227,7 +227,7 @@ function reset() {
 </script>
 
 <template>
-  <div class="concord-playground">
+  <div class="concord-examples">
     <div v-if="!app" class="loading-state">
       <div class="loading-glyph" aria-hidden="true">{ }</div>
       <h2>Preparing your document.</h2>
@@ -306,7 +306,7 @@ function reset() {
         </div>
       </aside>
 
-      <section class="main" aria-label="Playground document">
+      <section class="main" aria-label="Example document">
         <section class="intro">
           <div>
             <span class="eyebrow">One signed document</span>
@@ -611,4 +611,4 @@ function reset() {
   </div>
 </template>
 
-<style src="./playground.css"></style>
+<style src="./examples.css"></style>

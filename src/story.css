@@ -487,7 +487,7 @@ textarea {
   align-items: end;
   margin-top: 15px;
 }
-.playground-caption {
+.examples-caption {
   font-size: 11px;
   color: var(--ui-fg-muted);
   line-height: 1.7;
@@ -961,12 +961,12 @@ button:hover:not(:disabled),
 }
 .muted,
 label,
-.playground-caption,
+.examples-caption,
 .demo-disclosure,
 .source-links span {
   font-size: 14px;
 }
-.playground-caption {
+.examples-caption {
   max-width: 840px;
 }
 .playground {

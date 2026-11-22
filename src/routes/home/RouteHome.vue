@@ -24,7 +24,7 @@ const packages = [
     detail:
       "The stable identity model uses Ed25519 signatures, with derived X25519 and age-compatible encryption keys. A key identifies a signer. Connecting that signer to a person still needs a trusted introduction.",
     action: "Explore the demo identity",
-    target: "/playground",
+    target: "/examples",
     source: "identity",
   },
   {
@@ -37,7 +37,7 @@ const packages = [
     detail:
       "Armour provides age-compatible encryption for identities, recipients and passphrases. Signatures and public metadata remain visible. Encryption protects the payload rather than hiding the existence of the document.",
     action: "Inspect the encrypted payload",
-    target: "/playground/json",
+    target: "/examples/json",
     source: "armour",
   },
   {
@@ -50,7 +50,7 @@ const packages = [
     detail:
       "The same proof model is available through JavaScript, a command-line tool and a GitHub Action. Verification needs the content and public proof. It does not need the private signing key.",
     action: "Try changing a signed record",
-    target: "/playground/verification",
+    target: "/examples/verification",
     source: "seal",
   },
   {
@@ -63,7 +63,7 @@ const packages = [
     detail:
       "Ledger handles append, commit, verification and replay. Concord adds application commands and replay plugins on top. Deterministic replay depends on using the same rules, and encrypted content requires the matching decryption capability.",
     action: "Follow the commit history",
-    target: "/playground/history",
+    target: "/examples/history",
     source: "ledger",
   },
 ];
@@ -79,7 +79,7 @@ const packages = [
         Your data, your keys, your copy.<br />A different foundation for applications.
       </p>
       <div class="hero-actions">
-        <RouterLink class="primary button" to="/playground">Try it in your browser ↘</RouterLink
+        <RouterLink class="primary button" to="/examples">Try it in your browser ↘</RouterLink
         ><RouterLink to="/idea">Start with the idea ↓</RouterLink>
       </div>
       <p class="hero-footnote">

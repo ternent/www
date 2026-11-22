@@ -1,10 +1,10 @@
 <script setup lang="ts">
 import { computed } from "vue";
-import type { Playground } from "./session";
+import type { NotesSession } from "./session";
 import { short } from "./session";
 
 const props = defineProps<{
-  session: Playground;
+  session: NotesSession;
   revision: number;
   view: "entry" | "history" | "json" | "verification";
   entryId: string | null;
