@@ -11,6 +11,7 @@ export type OpenedDocument = {
   parsed: { ok: true; value: unknown } | { ok: false; error: string };
   kind: "json" | "ledger" | "concord";
   inspection: Inspection | null;
+  contextLabel?: string;
 };
 
 export async function inspectDocument(
@@ -21,10 +22,11 @@ export async function inspectDocument(
     throw new Error("Choose a JSON file no larger than 16 MiB.");
   const bytes = new Uint8Array(input);
   let source: string;
+  const decoder = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true });
   try {
-    source = new TextDecoder("utf-8", { fatal: true, ignoreBOM: true }).decode(bytes);
-  } catch {
-    throw new Error("This file is not UTF-8 text.");
+    source = decoder.decode(bytes);
+  } catch (cause) {
+    throw new Error("This file is not UTF-8 text.", { cause });
   }
   const document: OpenedDocument = {
     name,

@@ -1,60 +1,24 @@
 <script setup lang="ts">
-import { computed, nextTick, onMounted, ref, shallowRef, triggerRef, watch } from "vue";
-import { useRoute, useRouter } from "vue-router";
+import { computed, onMounted, ref, shallowRef, triggerRef } from "vue";
+import { useRouter } from "vue-router";
 import type { AudienceId } from "@ternent/concord";
 import { actors, NotesSession, short, type ActorId } from "./session";
 import type { Note } from "./model";
 import { packageVersions } from "@/app/config/packages";
 import NoteEditor from "./NoteEditor.vue";
-import InspectorPanel from "../inspector/InspectorPanel.vue";
-import type { Inspection } from "../inspector/types";
+import { sendToInspector } from "../inspector/handoff";
 
-type View = "entries" | "history" | "json" | "verification";
-const route = useRoute();
 const router = useRouter();
 const app = shallowRef<NotesSession | null>(null);
 const busy = ref(true);
 const editorDirty = ref(false);
 const notice = ref("Generating demo identities and a signed document…");
 const isError = ref(false);
-const view = ref<View>((route.meta.examplesView as View) ?? "entries");
-watch(
-  () => route.path,
-  () => {
-    if (route.path !== "/examples" && !route.path.startsWith("/examples/")) return;
-    view.value = (route.meta.examplesView as View) ?? "entries";
-  },
-);
-watch(view, (next) => {
-  if (route.path !== "/examples" && !route.path.startsWith("/examples/")) return;
-  const path = next === "entries" ? "/examples" : `/examples/${next}`;
-  if (route.path !== path) void router.push(path);
-});
 const audience = ref<AudienceId>("document");
 const selectedNoteId = ref<string | null>("welcome");
-const selectedEntryId = ref<string | null>(null);
-const selectedCommitId = ref<string | null>(null);
-const rawEditor = ref("");
-const upload = ref<HTMLInputElement | null>(null);
-const views = [
-  { id: "entries", label: "Entries" },
-  { id: "history", label: "History" },
-  { id: "json", label: "Stored JSON" },
-  { id: "verification", label: "Verification" },
-] as const;
 const report = computed(() => {
   return app.value?.handle.inspect();
 });
-const inspection = computed<Inspection | null>(() =>
-  app.value && report.value
-    ? {
-        verification: report.value.verification,
-        history: report.value.history,
-        snapshot: app.value.snapshot,
-        concord: report.value,
-      }
-    : null,
-);
 const state = computed(() => {
   return app.value?.handle.state();
 });
@@ -87,32 +51,6 @@ const bobIsMember = computed(
       ?.members.some((member) => member.identity.id === app.value?.publicIdentity("bob")?.id) ??
     false,
 );
-const committedJson = computed(() => {
-  return app.value?.json ?? "";
-});
-watch(committedJson, (json) => {
-  try {
-    rawEditor.value = JSON.stringify(JSON.parse(json), null, 2);
-  } catch {
-    rawEditor.value = json;
-  }
-});
-
-function updateSelection() {
-  const note = selectedNote.value;
-  const entry =
-    note &&
-    report.value?.entries
-      ?.filter(
-        (item) =>
-          item.status === "readable" &&
-          (item.event.data as { id?: string; audience?: string })?.id === note.id &&
-          (item.event.data as { audience?: string })?.audience === note.audience,
-      )
-      .at(-1);
-  selectedEntryId.value = entry?.entryId ?? null;
-}
-watch([selectedNoteId, audience, committedJson, () => app.value?.reader], updateSelection);
 async function run(operation: () => Promise<unknown>, message: string) {
   if (busy.value) return;
   busy.value = true;
@@ -134,7 +72,6 @@ async function start() {
     app.value = await NotesSession.create();
     audience.value = "document";
     selectedNoteId.value = "welcome";
-    selectedEntryId.value = null;
     notice.value = "Ready. Try a different reader to explore access.";
     isError.value = false;
   } catch (cause) {
@@ -149,21 +86,6 @@ onMounted(start);
 function selectGroup(id: AudienceId) {
   audience.value = id;
   selectedNoteId.value = projection.value?.notes.find((note) => note.audience === id)?.id ?? null;
-  view.value = "entries";
-}
-async function selectEntry(id: string) {
-  selectedEntryId.value = id;
-  const entry = report.value?.entries?.find((item) => item.entryId === id);
-  if (entry?.status === "readable") {
-    const data = entry.event.data as { id?: string; audience?: AudienceId };
-    if (data.id && data.audience) {
-      audience.value = data.audience;
-      selectedNoteId.value = data.id;
-    }
-  }
-  view.value = "entries";
-  await nextTick();
-  selectedEntryId.value = id;
 }
 function switchReader(reader: ActorId) {
   void run(
@@ -182,23 +104,24 @@ function save(note: Note) {
       : "Entry encrypted and committed. The signed history has a new head.",
   );
 }
-function tamper() {
-  void run(async () => {
-    await app.value!.tamper();
-    view.value = "verification";
-  }, "The last commit signature was altered. Verification now reports the actual result.");
-}
-function restore() {
-  void run(() => app.value!.restore(), "Previous document restored.");
-}
-function applyRaw() {
-  void run(async () => {
-    await app.value!.applyJson(rawEditor.value);
-    view.value = "verification";
-  }, "Raw input applied. Check integrity and application replay below.");
-}
-function copyRaw() {
-  void run(() => navigator.clipboard.writeText(app.value!.json), "Committed JSON copied.");
+function inspectExample(target = "/inspect") {
+  if (!app.value || busy.value) return;
+  const report = app.value.handle.inspect();
+  const selectedEntry = report.entries
+    ?.filter((entry) =>
+      entry.status === "readable"
+        ? (entry.event.data as { id?: string; audience?: string })?.id === selectedNote.value?.id &&
+          (entry.event.data as { audience?: string })?.audience === audience.value
+        : entry.audience === audience.value,
+    )
+    .at(-1);
+  sendToInspector({
+    bytes: app.value.export(),
+    name: "concord-document.json",
+    entryId: selectedEntry?.entryId,
+    context: { label: `Example snapshot · ${currentActor.value?.name}`, report },
+  });
+  void router.push(target);
 }
 function exportDocument() {
   if (!app.value) return;
@@ -215,18 +138,6 @@ function exportDocument() {
     : "Exported the committed document. No identity secrets are included.";
   isError.value = false;
 }
-async function importDocument(event: Event) {
-  const input = event.target as HTMLInputElement;
-  const file = input.files?.[0];
-  if (!file) return;
-  await run(async () => {
-    if (file.size > 2 * 1024 * 1024)
-      throw new Error("Use a document no larger than 2 MiB in this demo.");
-    await app.value!.load(new Uint8Array(await file.arrayBuffer()));
-    view.value = "verification";
-  }, "File opened with the current demo identity. Check its verification and replay results.");
-  input.value = "";
-}
 function reset() {
   if (
     confirm(
@@ -238,7 +149,7 @@ function reset() {
 </script>
 
 <template>
-  <div class="concord-examples document-workbench">
+  <div class="concord-examples document-workbench examples-workbench">
     <div v-if="!app" class="loading-state">
       <div class="loading-glyph" aria-hidden="true">{ }</div>
       <h2>Opening your document</h2>
@@ -261,12 +172,7 @@ function reset() {
               @click="switchReader(actor.id)"
             >
               <span class="avatar" :class="actor.id">{{ actor.initials }}</span>
-              <span class="identity-copy"
-                ><strong>{{ actor.name }}</strong
-                ><small>{{
-                  actor.id === "none" ? "Public view" : short(app.publicIdentity(actor.id)!.id, 12)
-                }}</small></span
-              >
+              <span class="identity-copy"><strong>{{ actor.name }}</strong></span>
               <span v-if="app.reader === actor.id" class="identity-check" aria-hidden="true"
                 >✓</span
               >
@@ -309,14 +215,6 @@ function reset() {
         </div>
 
         <div class="sidebar-bottom">
-          <div class="document-anchor">
-            <span class="sidebar-label">Document</span>
-            <span class="mono" :title="report?.verification.documentId ?? ''">{{
-              report?.verification.documentId
-                ? short(report.verification.documentId, 19)
-                : "Unavailable"
-            }}</span>
-          </div>
           <button class="reset-demo" :disabled="busy" @click="reset">
             <span aria-hidden="true">↻</span> Start fresh
           </button>
@@ -328,8 +226,8 @@ function reset() {
               history and no private keys.
             </p>
             <p>
-              Keep this tab open to decrypt a file you re-import. This simulates several readers in
-              one session.
+              Inspect document opens a committed snapshot as the selected reader. Unfinished edits
+              stay here when you switch tools.
             </p>
             <a :href="`https://www.npmjs.com/package/@ternent/concord/v/${packageVersions.concord}`"
               >Concord {{ packageVersions.concord }} ↗</a
@@ -349,74 +247,28 @@ function reset() {
             </div>
           </div>
           <div class="document-actions">
-            <input
-              ref="upload"
-              class="sr-only"
-              tabindex="-1"
-              type="file"
-              accept="application/json,.json"
-              aria-label="Import a Concord document"
-              @change="importDocument"
-            />
             <button
               class="button subtle"
-              :disabled="busy || !!draft || editorDirty"
-              @click="upload?.click()"
+              data-test="export-document"
+              :disabled="busy"
+              @click="exportDocument"
             >
-              <span aria-hidden="true">↓</span> Import
-            </button>
-            <button class="button primary" :disabled="busy" @click="exportDocument">
               Export <span aria-hidden="true">↗</span>
             </button>
-          </div>
-        </div>
-
-        <div class="view-bar">
-          <nav aria-label="Document views">
-            <RouterLink
-              v-for="item in views"
-              :key="item.id"
-              :to="item.id === 'entries' ? '/examples' : `/examples/${item.id}`"
-              :class="{ active: view === item.id }"
-              :aria-current="view === item.id ? 'page' : undefined"
-              >{{ item.label }}</RouterLink
+            <button
+              class="button primary"
+              data-test="inspect-document"
+              aria-label="Inspect document"
+              title="Inspect this committed document"
+              :disabled="busy"
+              @click="inspectExample()"
             >
-          </nav>
-          <span class="viewer-caption">Reading as <strong>{{ currentActor?.name }}</strong></span>
+              Inspect <span aria-hidden="true">↗</span>
+            </button>
+          </div>
         </div>
 
-        <div v-if="editorDirty && view !== 'entries'" class="draft-banner">
-          <div>
-            <strong>Unsubmitted editor text</strong><span>Your edits are waiting in Entries.</span>
-          </div>
-          <button class="button subtle" @click="view = 'entries'">Back to editor</button>
-        </div>
-        <div v-if="draft" class="draft-banner">
-          <div>
-            <strong
-              >{{ draft.entryCount }} staged
-              {{ draft.entryCount === 1 ? "event" : "events" }}</strong
-            ><span>Preview only · not yet in the exported file</span>
-          </div>
-          <button
-            class="button subtle"
-            :disabled="busy"
-            @click="
-              run(() => app!.discard(), 'Staged changes discarded. Committed history is unchanged.')
-            "
-          >
-            Discard
-          </button>
-          <button
-            class="button primary"
-            :disabled="busy"
-            @click="run(() => app!.commit(), 'Staged events encrypted and committed together.')"
-          >
-            Commit changes
-          </button>
-        </div>
-
-        <div v-show="view === 'entries'" class="content-grid">
+        <div class="content-grid">
           <section class="notes-panel" aria-label="Readable entries">
             <div class="panel-heading">
               <div>
@@ -504,7 +356,7 @@ function reset() {
               <p>
                 {{
                   state?.status !== "ready"
-                    ? "Open Verification to inspect this input."
+                    ? "Open Inspector to check this document."
                     : lockedInGroup
                       ? "This reader has no key for these events."
                       : "Add your first entry with the + button."
@@ -519,7 +371,9 @@ function reset() {
                   {{ lockedInGroup === 1 ? "event" : "events" }}</strong
                 ><span>May include changes to the same entry.</span>
               </p>
-              <button class="text-button" @click="view = 'json'">Inspect ↗</button>
+              <button class="text-button" @click="inspectExample('/inspect/json')">
+                Inspect ↗
+              </button>
             </div>
           </section>
 
@@ -543,74 +397,56 @@ function reset() {
                   )
               "
             />
-            <div class="authoring-control">
-              <label
-                ><input
-                  type="checkbox"
-                  :checked="app.mode === 'immediate'"
-                  :disabled="busy || !!draft || editorDirty"
-                  @change="
-                    run(
-                      () =>
-                        app!.setMode(
-                          ($event.target as HTMLInputElement).checked ? 'immediate' : 'draft',
-                        ),
-                      'Authoring mode updated.',
-                    )
-                  "
-                />
-                Auto-commit</label
-              ><span class="small muted">{{
-                app.mode === "immediate"
-                  ? "Each save signs a commit"
-                  : "Stage, then commit together"
-              }}</span>
-            </div>
           </section>
-
-          <InspectorPanel
-            :inspection="inspection!"
-            :actor-name="app.actorName.bind(app)"
-            editable
-            :has-draft="!!draft"
-            :can-restore="app.canRestore"
-            view="entry"
-            :entry-id="selectedEntryId"
-            :commit-id="selectedCommitId"
-            :blocked="editorDirty"
-            :raw="rawEditor"
-            :busy="busy"
-          />
         </div>
 
-        <InspectorPanel
-          v-if="view !== 'entries'"
-          :inspection="inspection!"
-          :actor-name="app.actorName.bind(app)"
-          editable
-          :has-draft="!!draft"
-          :can-restore="app.canRestore"
-          :view="view"
-          :entry-id="selectedEntryId"
-          :commit-id="selectedCommitId"
-          :blocked="editorDirty"
-          :raw="rawEditor"
-          :busy="busy"
-          @update:raw="rawEditor = $event"
-          @select-entry="selectEntry"
-          @select-commit="selectedCommitId = $event"
-          @copy="copyRaw"
-          @apply="applyRaw"
-          @tamper="tamper"
-          @restore="restore"
-          @verify="
-            run(
-              () => app!.handle.verify(),
-              'Verification completed against the current committed bytes.',
-            )
-          "
-        />
-
+        <div class="commit-strip">
+          <label class="auto-commit"
+            ><input
+              type="checkbox"
+              :checked="app.mode === 'immediate'"
+              :disabled="busy || !!draft || editorDirty"
+              @change="
+                run(
+                  () =>
+                    app!.setMode(
+                      ($event.target as HTMLInputElement).checked ? 'immediate' : 'draft',
+                    ),
+                  'Authoring mode updated.',
+                )
+              "
+            />
+            Auto-commit</label
+          >
+          <span class="commit-summary">{{
+            draft
+              ? `${draft.entryCount} staged ${draft.entryCount === 1 ? "event" : "events"}`
+              : app.mode === "draft"
+                ? "Changes will be staged"
+                : "Each save signs a commit"
+          }}</span>
+          <template v-if="draft">
+            <button
+              class="button subtle"
+              :disabled="busy || editorDirty"
+              @click="
+                run(
+                  () => app!.discard(),
+                  'Staged changes discarded. Committed history is unchanged.',
+                )
+              "
+            >
+              Discard
+            </button>
+            <button
+              class="button primary"
+              :disabled="busy || editorDirty"
+              @click="run(() => app!.commit(), 'Staged events encrypted and committed together.')"
+            >
+              Commit changes
+            </button>
+          </template>
+        </div>
         <div class="workspace-status">
           <div
             class="notice"
@@ -646,3 +482,5 @@ function reset() {
 </template>
 
 <style src="../inspector/workbench.css"></style>
+
+<style src="./examples.css"></style>

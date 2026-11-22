@@ -29,13 +29,13 @@ describe("routes", () => {
     expect(paths).toContain("/seal");
   });
 
-  it("serves the examples separately and preserves its inspector routes", () => {
+  it("serves examples separately and redirects earlier inline inspector URLs to the standalone tool", () => {
     const home = routes.find((route) => route.path === "/")!;
     const examples = routes.find((route) => route.path === "/examples")!;
     expect(examples.component).not.toBe(home.component);
     expect(examples.meta?.storySection).toBeUndefined();
     for (const path of ["/examples/history", "/examples/json", "/examples/verification"]) {
-      expect(routes.find((route) => route.path === path)?.component).toBe(examples.component);
+      expect(routes.find((route) => route.path === path)?.redirect).toBeTypeOf("function");
     }
   });
 
@@ -50,11 +50,11 @@ describe("routes", () => {
     expect(legacySectionPath("#overview")).toBe("/");
     expect(legacySectionPath("#history")).toBe("/ledger");
     expect(legacySectionPath("#verification")).toBe("/seal");
-    expect(legacySectionPath("#examples-json")).toBe("/examples/json");
+    expect(legacySectionPath("#examples-json")).toBe("/inspect/json");
     expect(legacySectionPath("#playground")).toBe("/examples");
-    expect(legacySectionPath("#playground-json")).toBe("/examples/json");
-    expect(legacySectionPath("#playground-history")).toBe("/examples/history");
-    expect(legacySectionPath("#playground-verification")).toBe("/examples/verification");
+    expect(legacySectionPath("#playground-json")).toBe("/inspect/json");
+    expect(legacySectionPath("#playground-history")).toBe("/inspect/history");
+    expect(legacySectionPath("#playground-verification")).toBe("/inspect/verification");
     expect(legacySectionPath("#unknown")).toBeUndefined();
   });
 });

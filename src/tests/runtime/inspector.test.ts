@@ -4,12 +4,20 @@ import { createDocument } from "@ternent/concord";
 import { createStandardSystemProfile } from "@ternent/concord/system";
 import { generateIdentity } from "@ternent/armour";
 import { inspectDocument, MAX_FILE_BYTES } from "../../modules/inspector/document";
+import {
+  applyInspectionContext,
+  sendToInspector,
+  takeInspection,
+  type InspectionContext,
+} from "../../modules/inspector/handoff";
 import { notesModel } from "../../modules/examples/model";
 
 const encode = (input: string) => new TextEncoder().encode(input);
 let ledgerBytes: Uint8Array;
 let concordBytes: Uint8Array;
 let malformedDeclaration: Uint8Array;
+let exampleContext: InspectionContext;
+let laterConcordBytes: Uint8Array;
 beforeAll(async () => {
   const generated = await generateIdentity();
   if (!generated.ok) throw new Error(generated.error.code);
@@ -36,9 +44,44 @@ beforeAll(async () => {
   });
   if (!written.ok) throw new Error(written.error.code);
   concordBytes = created.value.export();
+  exampleContext = { label: "Example snapshot", report: created.value.inspect() };
+  const later = await created.value.dispatch("put", {
+    id: "later",
+    audience: "document",
+    title: "Later state",
+    body: "A different committed head",
+  });
+  if (!later.ok) throw new Error(later.error.code);
+  laterConcordBytes = created.value.export();
   const unusual = await createLedger({ signer });
   await unusual.create({ metadata: { concord: { unexpected: true } } });
   malformedDeclaration = encode(JSON.stringify(await unusual.export()));
+});
+
+test("example reader inspection is applied only to its matching verified snapshot and never changes exported bytes", async () => {
+  const doc = await inspectDocument(concordBytes);
+  expect(doc.inspection?.concord?.application).toBe("not-run");
+  applyInspectionContext(doc, exampleContext);
+  expect(doc.contextLabel).toBe("Example snapshot");
+  expect(doc.inspection?.concord?.application).toBe("valid");
+  expect(doc.bytes).toEqual(concordBytes);
+  expect(doc.source).not.toContain("My private title");
+});
+
+test("a stale reader inspection cannot be applied to a different committed head", async () => {
+  const doc = await inspectDocument(laterConcordBytes);
+  expect(doc.inspection?.verification.integrity).toBe("valid");
+  applyInspectionContext(doc, exampleContext);
+  expect(doc.contextLabel).toBeUndefined();
+  expect(doc.inspection?.concord?.application).toBe("not-run");
+});
+
+test("the in-memory inspector hand-off copies its bytes and can be consumed only once", () => {
+  const input = new Uint8Array(concordBytes);
+  sendToInspector({ bytes: input, name: "example.json", context: exampleContext });
+  input.fill(0);
+  expect(takeInspection()?.bytes).toEqual(concordBytes);
+  expect(takeInspection()).toBeNull();
 });
 
 test("malformed Concord declarations cannot hide an otherwise inspectable, signed Ledger container", async () => {

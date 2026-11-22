@@ -37,7 +37,7 @@ const packages = [
     detail:
       "Armour provides age-compatible encryption for identities, recipients and passphrases. Signatures and public metadata remain visible. Encryption protects the payload rather than hiding the existence of the document.",
     action: "Inspect the encrypted payload",
-    target: "/examples/json",
+    target: "/examples",
     source: "armour",
   },
   {
@@ -49,8 +49,8 @@ const packages = [
     text: "A signature lets someone check whether content matches what a particular key signed. Seal packages that proof so it can travel with a file, a release or an exported history.",
     detail:
       "The same proof model is available through JavaScript, a command-line tool and a GitHub Action. Verification needs the content and public proof. It does not need the private signing key.",
-    action: "Try changing a signed record",
-    target: "/examples/verification",
+    action: "Verify a signed document",
+    target: "/inspect/verification",
     source: "seal",
   },
   {
@@ -63,7 +63,7 @@ const packages = [
     detail:
       "Ledger handles append, commit, verification and replay. Concord adds application commands and replay plugins on top. Deterministic replay depends on using the same rules, and encrypted content requires the matching decryption capability.",
     action: "Follow the commit history",
-    target: "/examples/history",
+    target: "/inspect/history",
     source: "ledger",
   },
 ];

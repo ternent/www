@@ -50,78 +50,61 @@ async function open(path: string, withShell = false) {
   return { router, wrapper };
 }
 
-test("document navigation keeps keyboard focus and the same verified document in the app shell", async () => {
+test("inspection opens the committed example in the standalone tool with its reader context", async () => {
   const { router, wrapper } = await open("/examples", true);
-  const head = wrapper.get(".head-label").text();
-  const jsonLink = wrapper.get<HTMLAnchorElement>('.view-bar a[href="/examples/json"]');
-  jsonLink.element.focus();
-  await jsonLink.trigger("click");
-  await flushPromises();
-  expect(router.currentRoute.value.path).toBe("/examples/json");
-  expect(document.activeElement).toBe(jsonLink.element);
-  expect(jsonLink.attributes("aria-current")).toBe("page");
-  expect(wrapper.get(".head-label").text()).toBe(head);
-  expect(wrapper.find(".site-footer").exists()).toBe(false);
-  expect(wrapper.find(".workbench-header").exists()).toBe(true);
-}, 15_000);
-
-test("switching tools preserves the example keys, unfinished editor and document without navigating back unexpectedly", async () => {
-  const { router, wrapper } = await open("/examples", true);
-  const head = wrapper.get(".head-label").text();
-  await wrapper.get("#note-title").setValue("Keep this while inspecting another file");
-  await router.push("/examples/json");
-  await flushPromises();
-  await router.push("/inspect");
-  await flushPromises();
+  const head = wrapper.get(".head-label").attributes("title");
+  expect(wrapper.find(".entry-inspector").exists()).toBe(false);
+  expect(wrapper.find(".view-bar").exists()).toBe(false);
+  await wrapper.get('[data-test="inspect-document"]').trigger("click");
+  await vi.waitFor(() => expect(wrapper.find(".file-summary").exists()).toBe(true));
   expect(router.currentRoute.value.path).toBe("/inspect");
-  expect(wrapper.find(".inspector-welcome").exists()).toBe(true);
+  expect(wrapper.get(".file-facts").text()).toContain(head);
+  expect(wrapper.get(".viewer-caption").text()).toContain("Example snapshot · Alice");
+  await router.push("/inspect/entries");
+  await flushPromises();
+  expect(wrapper.get(".readable-code").text()).toContain("A document you can take with you");
   await router.push("/examples");
   await flushPromises();
-  expect(router.currentRoute.value.path).toBe("/examples");
+  expect(wrapper.get(".head-label").attributes("title")).toBe(head);
+}, 15_000);
+
+test("unfinished editor text survives the standalone inspector hand-off without changing the reader or history", async () => {
+  const { router, wrapper } = await open("/examples", true);
+  const head = wrapper.get(".head-label").attributes("title");
+  await wrapper.get("#note-title").setValue("Keep this unfinished edit");
+  await wrapper.get('[data-test="inspect-document"]').trigger("click");
+  await vi.waitFor(() => expect(wrapper.find(".file-summary").exists()).toBe(true));
+  expect(wrapper.get(".file-facts").text()).toContain(head);
+  await router.push("/examples");
+  await flushPromises();
   expect(wrapper.get<HTMLInputElement>("#note-title").element.value).toBe(
-    "Keep this while inspecting another file",
+    "Keep this unfinished edit",
   );
-  expect(wrapper.get(".head-label").text()).toBe(head);
-  expect(wrapper.get('.view-bar a[href="/examples"]').attributes("aria-current")).toBe("page");
-}, 15_000);
-
-test("old playground inspector URLs redirect to examples while retaining query and selection", async () => {
-  const { router, wrapper } = await open("/playground/json?source=bookmark#stored-entry");
-  expect(router.currentRoute.value.fullPath).toBe("/examples/json?source=bookmark#stored-entry");
-  expect(wrapper.find("#raw-json").exists()).toBe(true);
-  expect(wrapper.findAll(".concord-examples")).toHaveLength(1);
-}, 15_000);
-
-test("direct inspector URLs preserve the real document, selected reader and unapplied JSON across navigation", async () => {
-  const { router, wrapper } = await open("/examples/json");
-  expect(router.currentRoute.value.path).toBe("/examples/json");
-  const originalHead = wrapper.get(".head-label").text();
-  const raw = wrapper.get<HTMLTextAreaElement>("#raw-json").element.value + "\n  ";
-  await wrapper.get("#raw-json").setValue(raw);
-  await router.push("/examples/history");
-  await flushPromises();
-  const bob = wrapper.findAll(".identity-button").find((button) => button.text().includes("Bob"))!;
-  await bob.trigger("click");
-  await vi.waitFor(() => expect(bob.attributes("aria-pressed")).toBe("true"));
-  await router.push("/examples/json");
-  await flushPromises();
-  expect(wrapper.get<HTMLTextAreaElement>("#raw-json").element.value).toBe(raw);
-  expect(wrapper.get(".head-label").text()).toBe(originalHead);
-  expect(wrapper.get(".status-strip").text()).toContain("2 readable notes");
-}, 15_000);
-
-test("unsubmitted note text survives inspector navigation and cannot be silently assigned to another reader", async () => {
-  const { router, wrapper } = await open("/examples");
-  await wrapper.get("#note-title").setValue("Still just in the editor");
-  await flushPromises();
   const bob = wrapper.findAll(".identity-button").find((button) => button.text().includes("Bob"))!;
   expect(bob.attributes("disabled")).toBeDefined();
-  await router.push("/examples/verification");
-  await flushPromises();
-  expect(wrapper.get(".draft-banner").text()).toContain("Unsubmitted editor text");
+  expect(wrapper.get(".head-label").attributes("title")).toBe(head);
+}, 15_000);
+
+test("the compact commit strip stages in memory while Inspector receives only committed history", async () => {
+  const { router, wrapper } = await open("/examples", true);
+  const head = wrapper.get(".head-label").attributes("title");
+  await wrapper.get(".auto-commit input").setValue(false);
+  await vi.waitFor(() =>
+    expect(wrapper.get(".commit-summary").text()).toContain("Changes will be staged"),
+  );
+  await wrapper.get("#note-title").setValue("A staged edit");
+  await wrapper.get(".note-editor").trigger("submit");
+  await vi.waitFor(() => expect(wrapper.get(".commit-summary").text()).toContain("1 staged event"));
+  await wrapper.get('[data-test="inspect-document"]').trigger("click");
+  await vi.waitFor(() => expect(wrapper.find(".file-summary").exists()).toBe(true));
+  expect(wrapper.get(".file-facts").text()).toContain(head);
   await router.push("/examples");
   await flushPromises();
-  expect(wrapper.get<HTMLInputElement>("#note-title").element.value).toBe(
-    "Still just in the editor",
-  );
+  expect(wrapper.get(".commit-summary").text()).toContain("1 staged event");
+  const commit = wrapper
+    .findAll(".commit-strip button")
+    .find((button) => button.text().includes("Commit changes"))!;
+  await commit.trigger("click");
+  await vi.waitFor(() => expect(wrapper.get(".head-label").attributes("title")).not.toBe(head));
+  expect(wrapper.get(".commit-summary").text()).toContain("Changes will be staged");
 }, 15_000);

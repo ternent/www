@@ -4,24 +4,15 @@ import { short, format, type Inspection } from "./types";
 
 const props = defineProps<{
   inspection: Inspection;
-  actorName?: (id: string) => string;
-  editable?: boolean;
-  hasDraft?: boolean;
-  canRestore?: boolean;
   view: "entry" | "history" | "json" | "verification";
   entryId: string | null;
   commitId: string | null;
   raw: string;
   busy: boolean;
-  blocked?: boolean;
 }>();
 const emit = defineEmits<{
-  "update:raw": [value: string];
   "select-entry": [id: string];
   "select-commit": [id: string];
-  apply: [];
-  tamper: [];
-  restore: [];
   verify: [];
   copy: [];
 }>();
@@ -145,7 +136,7 @@ const prettyDate = (input: string) => {
               String(inspection.history.length - visibleHistory.length + index + 1).padStart(2, "0")
             }}</span
             ><span
-              ><strong>{{ (actorName ?? short)(item.subject.signer.id) }}</strong
+              ><strong>{{ short(item.subject.signer.id) }}</strong
               ><span class="mono small">{{ short(item.id, 18) }}</span></span
             ><span class="history-time"
               >{{ prettyDate(item.subject.committedAt)
@@ -171,7 +162,7 @@ const prettyDate = (input: string) => {
           v-for="id in commit.subject.entryIds.slice(0, entryLimit)"
           :key="id"
           class="entry-link mono"
-          :disabled="busy || blocked"
+          :disabled="busy"
           @click="emit('select-entry', id)"
         >
           {{ short(id, 28) }} <span aria-hidden="true">↗</span>
@@ -194,54 +185,13 @@ const prettyDate = (input: string) => {
   <section v-else-if="view === 'json'" class="document-panel">
     <div class="panel-heading">
       <div>
-        <h2>{{ editable ? "Stored JSON" : "Original source" }}</h2>
+        <h2>Original source</h2>
       </div>
       <button class="button subtle" :disabled="busy" @click="emit('copy')">Copy JSON</button>
     </div>
-    <p class="muted panel-description">
-      {{
-        editable
-          ? "The exported file. Edit it to test verification."
-          : "Original source. Inspection never rewrites your file."
-      }}
-    </p>
-    <label class="sr-only" for="raw-json">{{
-      editable ? "Document JSON editor" : "Original document source"
-    }}</label
-    ><textarea
-      id="raw-json"
-      class="raw-editor"
-      :value="raw"
-      :readonly="!editable"
-      spellcheck="false"
-      @input="emit('update:raw', ($event.target as HTMLTextAreaElement).value)"
-    ></textarea>
-    <div v-if="editable" class="raw-actions">
-      <button
-        class="button primary"
-        :disabled="busy || blocked || !!hasDraft"
-        @click="emit('apply')"
-      >
-        Apply & verify</button
-      ><button
-        class="button subtle danger"
-        :disabled="busy || blocked || !!hasDraft || report.integrity !== 'valid'"
-        @click="emit('tamper')"
-      >
-        Alter last signature</button
-      ><button
-        v-if="canRestore"
-        class="text-button"
-        :disabled="busy || blocked"
-        @click="emit('restore')"
-      >
-        Restore previous document
-      </button>
-    </div>
-    <p v-if="editable" class="small muted">
-      Applying replaces this document. Restore keeps one previous version in memory. Staged changes
-      are excluded.
-    </p>
+    <p class="muted panel-description">Original source. Inspection never rewrites your file.</p>
+    <label class="sr-only" for="raw-json">Original document source</label
+    ><textarea id="raw-json" class="raw-editor" :value="raw" readonly spellcheck="false"></textarea>
   </section>
 
   <section v-else class="document-panel">
@@ -327,21 +277,5 @@ const prettyDate = (input: string) => {
       }}</pre>
     </div>
     <p v-else class="no-findings"><span aria-hidden="true">✓</span> No verification findings.</p>
-    <div v-if="editable" class="raw-actions">
-      <button
-        class="button subtle danger"
-        :disabled="busy || blocked || !!hasDraft || report.integrity !== 'valid'"
-        @click="emit('tamper')"
-      >
-        Try changing a signature</button
-      ><button
-        v-if="canRestore"
-        class="button primary"
-        :disabled="busy || blocked"
-        @click="emit('restore')"
-      >
-        Restore previous document
-      </button>
-    </div>
   </section>
 </template>

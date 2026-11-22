@@ -63,6 +63,49 @@ async function setup(path = "/inspect") {
   return { router, wrapper, drop };
 }
 
+test("the actual example download opens through the inspector file picker with the same verified head", async () => {
+  const { wrapper, router } = await setup("/examples");
+  await vi.waitFor(() => expect(wrapper.findAll(".identity-button")).toHaveLength(4));
+  const expectedHead = wrapper.get(".head-label").attributes("title");
+  let downloaded!: Blob;
+  let filename = "";
+  const create = vi.spyOn(URL, "createObjectURL").mockImplementation((blob) => {
+    downloaded = blob as Blob;
+    return "blob:example-download";
+  });
+  const revoke = vi.spyOn(URL, "revokeObjectURL").mockImplementation(() => {});
+  const click = vi.spyOn(HTMLAnchorElement.prototype, "click").mockImplementation(function (
+    this: HTMLAnchorElement,
+  ) {
+    filename = this.download;
+  });
+  cleanups.push(() => {
+    create.mockRestore();
+    revoke.mockRestore();
+    click.mockRestore();
+  });
+  await wrapper.get('[data-test="export-document"]').trigger("click");
+  expect(downloaded).toBeInstanceOf(Blob);
+  const imported = new File([downloaded], filename, { type: "application/json" });
+  Object.defineProperty(imported, "arrayBuffer", {
+    value: () =>
+      new Promise<ArrayBuffer>((resolve, reject) => {
+        const reader = new FileReader();
+        reader.onload = () => resolve(reader.result as ArrayBuffer);
+        reader.onerror = () => reject(reader.error);
+        reader.readAsArrayBuffer(imported);
+      }),
+  });
+  await router.push("/inspect");
+  await flushPromises();
+  const input = wrapper.get<HTMLInputElement>('[aria-label="Open a JSON document"]');
+  Object.defineProperty(input.element, "files", { value: [imported], configurable: true });
+  await input.trigger("change");
+  await vi.waitFor(() => expect(wrapper.find(".file-summary h2").exists()).toBe(true));
+  expect(wrapper.get(".inspection-summary").text()).toContain("Signed history verified");
+  expect(wrapper.get(".file-facts").text()).toContain(expectedHead);
+}, 15_000);
+
 test("a dropped signed file is verified read-only and retained across inspector views and tools", async () => {
   const { wrapper, router, drop } = await setup("/inspect/history");
   await drop(file(signedSource, "my-ledger.json"));

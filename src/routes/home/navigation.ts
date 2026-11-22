@@ -37,7 +37,7 @@ export function legacySectionPath(hash: string): string | undefined {
   }
   section = section.replace(/^playground(?=-|$)/, "examples");
   if (["examples-history", "examples-json", "examples-verification"].includes(section)) {
-    return `/examples/${section.slice("examples-".length)}`;
+    return `/inspect/${section.slice("examples-".length)}`;
   }
   return isStorySection(section) ? sectionPaths[section] : undefined;
 }

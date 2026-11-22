@@ -50,10 +50,7 @@ const footerGroups = [
   {
     title: "Examples",
     links: [
-      { label: "Rebuild from history", to: "/examples" },
-      { label: "Encrypted data", to: "/examples/json" },
-      { label: "Commit history", to: "/examples/history" },
-      { label: "Verification", to: "/examples/verification" },
+      { label: "Encrypted notes", to: "/examples" },
       { label: "Document inspector", to: "/inspect" },
       { label: "Local identity", to: "/demo/identity" },
     ],

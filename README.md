@@ -54,7 +54,7 @@ release is accepted. No npm access token is needed to install these public packa
 | `/identity`, `/armour`, `/seal`, `/ledger`, `/concord`                           | Building-block sections                               |
 | `/open-source`, `/about`                                                         | Source and working together                           |
 | `/examples`                                                                      | Signed document, reader identities and privacy groups |
-| `/examples/json`, `/examples/history`, `/examples/verification`                  | Document inspectors                                   |
+| `/examples/json`, `/examples/history`, `/examples/verification`                  | Legacy redirects to standalone Inspector              |
 | `/inspect`                                                                       | Standalone JSON document inspector                    |
 | `/inspect/entries`, `/inspect/history`, `/inspect/json`, `/inspect/verification` | Read-only document views                              |
 | `/demo/identity`                                                                 | Local identity demo                                   |
@@ -62,18 +62,13 @@ release is accepted. No npm access token is needed to install these public packa
 
 Story routes share one page and navigate to its sections. Scrolling replaces the URL
 without accumulating history entries. Legacy hashes resolve to clean paths. Unknown
-routes return to `/`. All examples inspector routes reuse the same component and
-retain the current session and unfinished work.
+routes return to `/`. Tool navigation retains the current example session and unfinished work.
 
-Earlier `/playground` URLs redirect to `/examples`, including each inspector route.
-Legacy playground hashes resolve to the matching examples view too.
+Earlier `/playground` URLs redirect to `/examples`. Former playground/examples inspector paths and hashes redirect to the standalone `/inspect` views.
 
 ## Examples ownership and review
 
-`/examples` has its own full-width application shell. Readers and groups sit beside
-the document; Entries separates the entry list, editor and signed-record inspector.
-History, Stored JSON and Verification use direct links that retain the session,
-editor state and navigation focus. Contextual help contains the longer explanations.
+`/examples` is a full-width notes app with readers, privacy groups, an entry list and an editor. A compact bottom strip owns auto-commit, staged changes, Commit and Discard. JSON, history and verification live in the standalone Inspector. Inspect document transfers a committed snapshot and the selected reader's inspection in memory; unfinished editor text and drafts stay in Examples.
 
 `src/modules/examples/model.ts` owns note command validation, domain events and a
 pure projection. Note identifiers are scoped to their privacy group.
@@ -91,19 +86,15 @@ Suggested review:
    history, timing, event counts and ciphertext remain inspectable.
 3. Disable automatic commit, stage changes and inspect the unchanged committed JSON.
    Commit creates a signed history boundary; discard leaves that history unchanged.
-4. Follow an entry into its stored record and history. Navigate between inspector
-   routes, including directly loaded URLs, without resetting the reader or work.
-5. Export and reopen in the same tab. Change a signature or raw JSON, inspect the
-   actual verification failures, then restore the previous document.
+4. Use Inspect document to follow the selected entry into its stored record and history. Return to Examples without resetting the reader or unfinished work.
+5. Export and open the downloaded file in Inspector. It must verify without the example reader context. Edit a copy externally and reopen it to inspect actual verification failures.
 6. Remove Bob, append another event and read as Bob. Previously shared history stays
    readable; future events use a new group key. Readmission grants that group's history.
 
 The three demo identities and staged work stay in memory. This is a single-tab host
 simulating several readers, not isolation between real user sessions. Reload clears
 the keys and current work. Exports contain committed history and no identity secrets;
-keep the tab open to decrypt re-imported files. Files must be no larger than 2 MiB.
-Invalid and unknown-model documents stay inspectable without providing trusted notes
-or loading executable code. One previous document is kept in memory for Restore.
+opening an exported file separately supplies no reader keys or application model. Use Inspect document for the existing reader's snapshot inspection. It transfers no private keys.
 
 Readable replay reports its limited coverage. Locked events never get invented titles
 or contents, and their count is not a count of distinct notes. Integrity, replay,
@@ -140,8 +131,7 @@ stays encrypted; public metadata and original stored records remain available. L
 or other JSON formats get generic inspection with no signature-verification claim.
 
 `src/modules/inspector` owns file inspection and shared record/history/source/
-verification presentation. Examples supply their own inspection report and explicit
-authoring actions; the standalone tool exposes no mutation controls. Both use the same
+verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both use the same
 workbench styles and header. Meaningful tests cover real signed inputs, foreign models,
 tampering, duplicate keys, source/byte preservation, escaped content, failed and racing
 file opens, route navigation and preservation of unfinished example work.

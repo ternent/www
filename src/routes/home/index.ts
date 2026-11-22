@@ -17,13 +17,12 @@ const homeRoutes: RouteModule = [
   { path: "/examples", name: "examples", component: examples },
   ...["history", "json", "verification"].map((view) => ({
     path: `/examples/${view}`,
-    component: examples,
-    meta: { examplesView: view },
+    redirect: (to: RouteLocation) => ({ path: `/inspect/${view}`, query: to.query, hash: to.hash }),
   })),
   ...["", "/history", "/json", "/verification"].map((suffix) => ({
     path: `/playground${suffix}`,
     redirect: (to: RouteLocation) => ({
-      path: `/examples${suffix}`,
+      path: suffix ? `/inspect${suffix}` : "/examples",
       query: to.query,
       hash: to.hash,
     }),

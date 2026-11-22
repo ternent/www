@@ -1,10 +1,11 @@
 <script setup lang="ts">
-import { computed, nextTick, ref, shallowRef } from "vue";
+import { computed, nextTick, onActivated, onMounted, ref, shallowRef } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { inspectDocument, MAX_FILE_BYTES, type OpenedDocument } from "./document";
 import InspectorPanel from "./InspectorPanel.vue";
 import JsonBrowser from "./JsonBrowser.vue";
 import { short } from "./types";
+import { applyInspectionContext, takeInspection, type InspectionContext } from "./handoff";
 
 type View = "overview" | "entries" | "history" | "json" | "verification";
 const route = useRoute();
@@ -75,25 +76,39 @@ const size = computed(() => {
       : `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 });
 
-async function open(input: File | string) {
+async function open(
+  input: File | string | Uint8Array,
+  options?: { name: string; context?: InspectionContext; entryId?: string },
+) {
   const current = ++request;
   const wasEmpty = !opened.value;
   busy.value = true;
   error.value = "";
   try {
-    if (typeof input !== "string" && input.size > MAX_FILE_BYTES)
+    if (typeof input !== "string" && !(input instanceof Uint8Array) && input.size > MAX_FILE_BYTES)
       throw new Error("Choose a JSON file no larger than 16 MiB.");
     const bytes =
       typeof input === "string"
         ? new TextEncoder().encode(input)
-        : new Uint8Array(await input.arrayBuffer());
+        : input instanceof Uint8Array
+          ? new Uint8Array(input)
+          : new Uint8Array(await input.arrayBuffer());
     const candidate = await inspectDocument(
       bytes,
-      typeof input === "string" ? "pasted-document.json" : input.name,
+      options?.name ??
+        (typeof input === "string"
+          ? "pasted-document.json"
+          : input instanceof Uint8Array
+            ? "document.json"
+            : input.name),
     );
+    applyInspectionContext(candidate, options?.context);
     if (current !== request) return;
     opened.value = candidate;
-    entryId.value = candidate.inspection?.snapshot?.entries[0]?.id ?? null;
+    entryId.value =
+      candidate.inspection?.snapshot?.entries.find((entry) => entry.id === options?.entryId)?.id ??
+      candidate.inspection?.snapshot?.entries[0]?.id ??
+      null;
     commitId.value = candidate.inspection?.history.at(-1)?.id ?? null;
     search.value = "";
     entryLimit.value = 100;
@@ -109,6 +124,12 @@ async function open(input: File | string) {
     if (current === request) busy.value = false;
   }
 }
+function acceptHandoff() {
+  const next = takeInspection();
+  if (next) void open(next.bytes, next);
+}
+onMounted(acceptHandoff);
+onActivated(acceptHandoff);
 function fileChanged(event: Event) {
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
@@ -177,6 +198,11 @@ async function recheck() {
   busy.value = true;
   try {
     const candidate = await inspectDocument(document.bytes, document.name);
+    if (document.contextLabel && document.inspection?.concord)
+      applyInspectionContext(candidate, {
+        label: document.contextLabel,
+        report: document.inspection.concord,
+      });
     if (current === request) {
       opened.value = candidate;
       notice.value = "Verification completed against the original bytes.";
@@ -299,6 +325,10 @@ async function recheck() {
               No application model, system implementation or private key is loaded. Concord
               declarations and public records stay inspectable. Encrypted contents stay protected.
             </p>
+            <p v-if="opened.contextLabel">
+              This snapshot includes the selected example reader's inspection. Opening a file
+              separately uses public inspection and does not import that context.
+            </p>
             <p>
               Your file stays in this tab, including when switching tools. Close it or reload to
               clear it.
@@ -352,7 +382,9 @@ async function recheck() {
               >{{ tab.label }}</RouterLink
             >
           </nav>
-          <span class="viewer-caption">Read-only</span>
+          <span class="viewer-caption">{{
+            opened.contextLabel ?? "Read-only · public inspection"
+          }}</span>
         </div>
 
         <section v-if="view === 'overview'" class="inspection-overview">
