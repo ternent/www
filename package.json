@@ -15,7 +15,7 @@
     "test:unit": "vp test run",
     "test:unit:watch": "vp test",
     "test:e2e": "playwright test",
-    "test:runtime": "vp test run --config vitest.examples.config.ts",
+    "test:runtime": "vp test run --config vitest.runtime.config.ts",
     "check": "pnpm fmt:check && pnpm lint && pnpm typecheck && pnpm test && pnpm build"
   },
   "dependencies": {

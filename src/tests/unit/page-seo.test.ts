@@ -3,6 +3,18 @@ import { pageSeo } from "@/app/config/page-seo";
 import { sectionPaths } from "@/routes/home/navigation";
 
 describe("page metadata", () => {
+  it("gives the standalone inspector its own canonical and title", () => {
+    for (const path of [
+      "/inspect",
+      "/inspect/entries",
+      "/inspect/history",
+      "/inspect/json",
+      "/inspect/verification",
+    ]) {
+      expect(pageSeo(path).link[0].href).toBe("https://ternent.dev/inspect");
+      expect(pageSeo(path).title).toContain("Document inspector");
+    }
+  });
   it("consolidates the full-story aliases under the homepage canonical", () => {
     for (const [section, path] of Object.entries(sectionPaths)) {
       if (section === "examples") continue;

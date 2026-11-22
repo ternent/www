@@ -22,7 +22,7 @@
     "src/**/*.vue",
     "vite.config.ts",
     "playwright.config.ts",
-    "vitest.examples.config.ts"
+    "vitest.runtime.config.ts"
   ],
   "exclude": ["dist", "node_modules"]
 }

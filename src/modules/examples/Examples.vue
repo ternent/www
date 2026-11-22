@@ -6,25 +6,27 @@ import { actors, NotesSession, short, type ActorId } from "./session";
 import type { Note } from "./model";
 import { packageVersions } from "@/app/config/packages";
 import NoteEditor from "./NoteEditor.vue";
-import InspectorPanel from "./InspectorPanel.vue";
+import InspectorPanel from "../inspector/InspectorPanel.vue";
+import type { Inspection } from "../inspector/types";
 
 type View = "entries" | "history" | "json" | "verification";
 const route = useRoute();
 const router = useRouter();
 const app = shallowRef<NotesSession | null>(null);
-const revision = ref(0);
 const busy = ref(true);
 const editorDirty = ref(false);
 const notice = ref("Generating demo identities and a signed document…");
 const isError = ref(false);
 const view = ref<View>((route.meta.examplesView as View) ?? "entries");
 watch(
-  () => route.meta.examplesView,
-  (next) => {
-    view.value = (next as View) ?? "entries";
+  () => route.path,
+  () => {
+    if (route.path !== "/examples" && !route.path.startsWith("/examples/")) return;
+    view.value = (route.meta.examplesView as View) ?? "entries";
   },
 );
 watch(view, (next) => {
+  if (route.path !== "/examples" && !route.path.startsWith("/examples/")) return;
   const path = next === "entries" ? "/examples" : `/examples/${next}`;
   if (route.path !== path) void router.push(path);
 });
@@ -43,6 +45,16 @@ const views = [
 const report = computed(() => {
   return app.value?.handle.inspect();
 });
+const inspection = computed<Inspection | null>(() =>
+  app.value && report.value
+    ? {
+        verification: report.value.verification,
+        history: report.value.history,
+        snapshot: app.value.snapshot,
+        concord: report.value,
+      }
+    : null,
+);
 const state = computed(() => {
   return app.value?.handle.state();
 });
@@ -112,7 +124,6 @@ async function run(operation: () => Promise<unknown>, message: string) {
     isError.value = true;
     notice.value = cause instanceof Error ? cause.message : "The operation failed.";
   } finally {
-    revision.value++;
     triggerRef(app);
     busy.value = false;
   }
@@ -130,7 +141,6 @@ async function start() {
     notice.value = cause instanceof Error ? cause.message : "Could not create the demo.";
     isError.value = true;
   } finally {
-    revision.value++;
     triggerRef(app);
     busy.value = false;
   }
@@ -228,7 +238,7 @@ function reset() {
 </script>
 
 <template>
-  <div class="concord-examples">
+  <div class="concord-examples document-workbench">
     <div v-if="!app" class="loading-state">
       <div class="loading-glyph" aria-hidden="true">{ }</div>
       <h2>Opening your document</h2>
@@ -559,8 +569,11 @@ function reset() {
           </section>
 
           <InspectorPanel
-            :session="app"
-            :revision="revision"
+            :inspection="inspection!"
+            :actor-name="app.actorName.bind(app)"
+            editable
+            :has-draft="!!draft"
+            :can-restore="app.canRestore"
             view="entry"
             :entry-id="selectedEntryId"
             :commit-id="selectedCommitId"
@@ -572,8 +585,11 @@ function reset() {
 
         <InspectorPanel
           v-if="view !== 'entries'"
-          :session="app"
-          :revision="revision"
+          :inspection="inspection!"
+          :actor-name="app.actorName.bind(app)"
+          editable
+          :has-draft="!!draft"
+          :can-restore="app.canRestore"
           :view="view"
           :entry-id="selectedEntryId"
           :commit-id="selectedCommitId"
@@ -629,4 +645,4 @@ function reset() {
   </div>
 </template>
 
-<style src="./examples.css"></style>
+<style src="../inspector/workbench.css"></style>

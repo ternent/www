@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount, nextTick, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Logo from "@/components/BrandLogo.vue";
+import WorkbenchHeader from "@/modules/inspector/WorkbenchHeader.vue";
 import {
   sectionPaths,
   isStorySection,
@@ -15,6 +16,8 @@ const route = useRoute();
 const isExamples = computed(
   () => route.path === "/examples" || route.path.startsWith("/examples/"),
 );
+const isInspector = computed(() => route.path === "/inspect" || route.path.startsWith("/inspect/"));
+const isWorkbench = computed(() => isExamples.value || isInspector.value);
 const router = useRouter();
 const background = ref<HTMLElement | null>(null);
 usePointerGlow(background);
@@ -51,6 +54,7 @@ const footerGroups = [
       { label: "Encrypted data", to: "/examples/json" },
       { label: "Commit history", to: "/examples/history" },
       { label: "Verification", to: "/examples/verification" },
+      { label: "Document inspector", to: "/inspect" },
       { label: "Local identity", to: "/demo/identity" },
     ],
   },
@@ -122,7 +126,10 @@ onMounted(() => {
     await nextTick();
     refreshSections();
     if (scrolling || !from.matched.length) return;
-    if (isExamples.value && (from.path === "/examples" || from.path.startsWith("/examples/")))
+    if (
+      (isExamples.value && (from.path === "/examples" || from.path.startsWith("/examples/"))) ||
+      (isInspector.value && (from.path === "/inspect" || from.path.startsWith("/inspect/")))
+    )
       return;
     const section =
       typeof to.meta.storySection === "string"
@@ -149,27 +156,9 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <div v-show="!isExamples" ref="background" class="page-background" aria-hidden="true"></div>
+  <div v-show="!isWorkbench" ref="background" class="page-background" aria-hidden="true"></div>
   <a class="skip-link" href="#main-content" @click.prevent="skipToContent">Skip to content</a>
-  <header v-if="isExamples" class="examples-header">
-    <nav class="examples-breadcrumb" aria-label="Examples navigation">
-      <RouterLink class="examples-brand" to="/" aria-label="ternent.dev home">
-        <Logo aria-hidden="true" />
-      </RouterLink>
-      <span class="breadcrumb-divider" aria-hidden="true">/</span>
-      <RouterLink class="examples-wordmark" to="/examples">Examples</RouterLink>
-      <span class="examples-preview">Alpha</span>
-    </nav>
-    <div class="examples-header-actions">
-      <RouterLink to="/">About Ternent <span aria-hidden="true">↗</span></RouterLink>
-      <a
-        href="https://github.com/ternent/www/tree/main/src/modules/examples"
-        aria-label="Examples source on GitHub"
-        >Source <span aria-hidden="true">↗</span></a
-      >
-      <ThemeModeToggle />
-    </div>
-  </header>
+  <WorkbenchHeader v-if="isWorkbench" :active="isInspector ? 'inspect' : 'examples'" />
   <header v-else class="site-header">
     <div class="header-inner">
       <RouterLink class="brand-mark" to="/" aria-label="ternent.dev home"
@@ -199,14 +188,19 @@ onBeforeUnmount(() => {
           :aria-current="isActive(id) ? 'location' : undefined"
           >{{ label }}</RouterLink
         >
+        <RouterLink to="/inspect">Inspector</RouterLink>
         <a class="github-link" href="https://github.com/ternent"
           >GitHub <span aria-hidden="true">↗</span></a
         >
       </nav>
     </div>
   </header>
-  <RouterView />
-  <footer v-if="!isExamples" class="site-footer">
+  <RouterView v-slot="{ Component }">
+    <KeepAlive include="RouteExamples,RouteInspect">
+      <component :is="Component" />
+    </KeepAlive>
+  </RouterView>
+  <footer v-if="!isWorkbench" class="site-footer">
     <div class="footer-inner">
       <div class="footer-intro">
         <div>
@@ -243,80 +237,3 @@ onBeforeUnmount(() => {
     </div>
   </footer>
 </template>
-
-<style>
-.examples-header {
-  height: 64px;
-  padding: 0 24px;
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: 20px;
-  border-bottom: 1px solid var(--ui-border);
-  background: var(--ui-bg);
-  position: relative;
-  z-index: 30;
-}
-.examples-breadcrumb,
-.examples-header-actions {
-  display: flex;
-  align-items: center;
-  gap: 20px;
-}
-.examples-header a {
-  text-decoration: none;
-}
-.examples-brand {
-  display: flex;
-  align-items: center;
-}
-.examples-brand svg {
-  width: 32px;
-  height: 32px;
-}
-.breadcrumb-divider {
-  color: var(--ui-border);
-  font-size: 24px;
-  font-weight: 300;
-}
-.examples-wordmark {
-  font-size: 16px;
-  font-weight: 550;
-  letter-spacing: -0.3px;
-}
-.examples-preview {
-  border: 1px solid var(--ui-border);
-  border-radius: 5px;
-  padding: 2px 6px;
-  color: var(--ui-fg-muted);
-  font-size: 11px;
-}
-.examples-header-actions {
-  gap: 24px;
-  color: var(--ui-fg-muted);
-  font-size: 13px;
-}
-.examples-header-actions a:hover {
-  color: var(--ui-fg);
-}
-.examples-header .theme-mode-toggle {
-  min-width: 34px;
-  min-height: 34px;
-}
-@media (max-width: 650px) {
-  .examples-header {
-    height: 58px;
-    padding: 0 16px;
-    gap: 12px;
-  }
-  .examples-breadcrumb {
-    gap: 12px;
-  }
-  .examples-header-actions {
-    gap: 12px;
-  }
-  .examples-header-actions > a {
-    display: none;
-  }
-}
-</style>

@@ -62,7 +62,27 @@ test("document navigation keeps keyboard focus and the same verified document in
   expect(jsonLink.attributes("aria-current")).toBe("page");
   expect(wrapper.get(".head-label").text()).toBe(head);
   expect(wrapper.find(".site-footer").exists()).toBe(false);
-  expect(wrapper.find(".examples-header").exists()).toBe(true);
+  expect(wrapper.find(".workbench-header").exists()).toBe(true);
+}, 15_000);
+
+test("switching tools preserves the example keys, unfinished editor and document without navigating back unexpectedly", async () => {
+  const { router, wrapper } = await open("/examples", true);
+  const head = wrapper.get(".head-label").text();
+  await wrapper.get("#note-title").setValue("Keep this while inspecting another file");
+  await router.push("/examples/json");
+  await flushPromises();
+  await router.push("/inspect");
+  await flushPromises();
+  expect(router.currentRoute.value.path).toBe("/inspect");
+  expect(wrapper.find(".inspector-welcome").exists()).toBe(true);
+  await router.push("/examples");
+  await flushPromises();
+  expect(router.currentRoute.value.path).toBe("/examples");
+  expect(wrapper.get<HTMLInputElement>("#note-title").element.value).toBe(
+    "Keep this while inspecting another file",
+  );
+  expect(wrapper.get(".head-label").text()).toBe(head);
+  expect(wrapper.get('.view-bar a[href="/examples"]').attributes("aria-current")).toBe("page");
 }, 15_000);
 
 test("old playground inspector URLs redirect to examples while retaining query and selection", async () => {

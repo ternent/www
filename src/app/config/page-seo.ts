@@ -5,17 +5,22 @@ export const siteDescription =
 export function pageSeo(path: string) {
   const examples = path === "/examples" || path.startsWith("/examples/");
   const demo = path.startsWith("/demo/");
-  const canonical = `${origin}${examples ? "/examples" : demo ? path : "/"}`;
-  const title = examples
-    ? "Examples: rebuild from signed history | ternent.dev"
-    : demo
-      ? "Local identity demo | ternent.dev"
-      : "Software built on signed history | ternent.dev";
-  const description = examples
-    ? "Explore real encryption, signatures and replay in your browser. Verify an encrypted history and rebuild application state with Concord."
-    : demo
-      ? "Create, recover and unlock a local signing identity in your browser."
-      : siteDescription;
+  const inspector = path === "/inspect" || path.startsWith("/inspect/");
+  const canonical = `${origin}${inspector ? "/inspect" : examples ? "/examples" : demo ? path : "/"}`;
+  const title = inspector
+    ? "Document inspector | ternent.dev"
+    : examples
+      ? "Examples: rebuild from signed history | ternent.dev"
+      : demo
+        ? "Local identity demo | ternent.dev"
+        : "Software built on signed history | ternent.dev";
+  const description = inspector
+    ? "Inspect JSON and verify signed Ledger and Concord documents locally in your browser. Your file stays in your tab."
+    : examples
+      ? "Explore real encryption, signatures and replay in your browser. Verify an encrypted history and rebuild application state with Concord."
+      : demo
+        ? "Create, recover and unlock a local signing identity in your browser."
+        : siteDescription;
 
   return {
     title,

@@ -1,11 +1,13 @@
 <script setup lang="ts">
-import { computed } from "vue";
-import type { NotesSession } from "./session";
-import { short } from "./session";
+import { computed, ref } from "vue";
+import { short, format, type Inspection } from "./types";
 
 const props = defineProps<{
-  session: NotesSession;
-  revision: number;
+  inspection: Inspection;
+  actorName?: (id: string) => string;
+  editable?: boolean;
+  hasDraft?: boolean;
+  canRestore?: boolean;
   view: "entry" | "history" | "json" | "verification";
   entryId: string | null;
   commitId: string | null;
@@ -23,22 +25,45 @@ const emit = defineEmits<{
   verify: [];
   copy: [];
 }>();
-const inspection = computed(() => ({
-  revision: props.revision,
-  report: props.session.handle.inspect(),
-  snapshot: props.session.snapshot,
-}));
-const report = computed(() => inspection.value.report);
-const snapshot = computed(() => inspection.value.snapshot);
+const report = computed(() => props.inspection.verification);
+const runtime = computed(() => props.inspection.concord);
+const snapshot = computed(() => props.inspection.snapshot);
 const entry = computed(() => snapshot.value?.entries.find((item) => item.id === props.entryId));
 const replayed = computed(() =>
-  report.value.entries?.find((item) => item.entryId === props.entryId),
+  runtime.value?.entries?.find((item) => item.entryId === props.entryId),
 );
 const commit = computed(
   () =>
-    report.value.history.find((item) => item.id === props.commitId) ?? report.value.history.at(-1),
+    props.inspection.history.find((item) => item.id === props.commitId) ??
+    props.inspection.history.at(-1),
 );
-const format = (input: unknown) => JSON.stringify(input, null, 2);
+const findings = computed(() => [
+  ...new Map(
+    [...report.value.findings, ...(runtime.value?.findings ?? [])].map((item) => [
+      JSON.stringify(item),
+      item,
+    ]),
+  ).values(),
+]);
+const historyLimit = ref(100);
+const entryLimit = ref(100);
+const visibleHistory = computed(() => props.inspection.history.slice(-historyLimit.value));
+const encrypted = computed(() => {
+  const data = entry.value?.subject.payload.data;
+  return (
+    !!runtime.value &&
+    entry.value?.subject.kind === "application" &&
+    data !== null &&
+    typeof data === "object" &&
+    "ciphertext" in data &&
+    typeof data.ciphertext === "string"
+  );
+});
+const readable = computed(() => {
+  if (replayed.value?.status === "readable") return replayed.value.event;
+  if (encrypted.value) return "Encrypted payload. No readable event is available to this reader.";
+  return entry.value?.subject.payload.data;
+});
 const prettyDate = (input: string) => {
   const date = new Date(input);
   return Number.isFinite(date.getTime())
@@ -50,7 +75,7 @@ const prettyDate = (input: string) => {
 <template>
   <section v-if="view === 'entry'" class="entry-inspector" aria-label="Entry inspector">
     <div class="section-heading">
-      <h2>Entry inspector</h2>
+      <h2 tabindex="-1">Entry inspector</h2>
       <span class="eyebrow">Stored & readable</span>
     </div>
     <template v-if="entry">
@@ -65,26 +90,16 @@ const prettyDate = (input: string) => {
         </div>
       </dl>
       <div class="code-heading readable-heading">
-        <h3>Readable event</h3>
-        <span
-          class="status-dot"
-          :class="{ muted: entry.subject.kind !== 'system' && replayed?.status !== 'readable' }"
-          >{{
-            entry.subject.kind === "system"
-              ? "Public metadata"
-              : replayed?.status === "readable"
-                ? "Decrypted locally"
-                : "No decryption key"
-          }}</span
-        >
+        <h3>{{ encrypted ? "Readable event" : "Recorded payload" }}</h3>
+        <span class="status-dot" :class="{ muted: encrypted && replayed?.status !== 'readable' }">{{
+          replayed?.status === "readable"
+            ? "Decrypted locally"
+            : encrypted
+              ? "Encrypted"
+              : "Stored JSON"
+        }}</span>
       </div>
-      <pre class="code-block readable-code" tabindex="0">{{
-        entry.subject.kind === "system"
-          ? format(entry.subject.payload)
-          : replayed?.status === "readable"
-            ? format(replayed.event)
-            : "The event is encrypted. This identity has no readable payload for it."
-      }}</pre>
+      <pre class="code-block readable-code" tabindex="0">{{ format(readable) }}</pre>
       <div class="code-heading stored-heading">
         <h3>Stored entry</h3>
         <span class="eyebrow">Exact signed record</span>
@@ -95,11 +110,17 @@ const prettyDate = (input: string) => {
       <span class="empty-symbol" aria-hidden="true">{ }</span>
       <p>No entry selected.</p>
       <p class="muted small">
-        Select a note, or open Stored JSON to inspect encrypted records and public metadata.
+        Select an entry, or open the source to inspect the original document.
       </p>
     </div>
     <div class="inspector-footnote">
-      <p>Titles and content are encrypted. System metadata is public.</p>
+      <p>
+        {{
+          encrypted
+            ? "Encrypted content remains protected; stored metadata is public."
+            : "Recorded payloads are shown as stored. Integrity does not establish application semantics."
+        }}
+      </p>
     </div>
   </section>
 
@@ -108,21 +129,23 @@ const prettyDate = (input: string) => {
       <div>
         <h2>Signed history</h2>
       </div>
-      <span class="pill" :class="{ warning: report.verification.integrity !== 'valid' }">{{
-        report.verification.integrity === "valid" ? "Verified history" : "Untrusted inspection"
+      <span class="pill" :class="{ warning: report.integrity !== 'valid' }">{{
+        report.integrity === "valid" ? "Verified history" : "Untrusted inspection"
       }}</span>
     </div>
     <div class="history-grid">
       <ol class="history-list">
-        <li v-for="(item, index) in report.history" :key="item.id">
+        <li v-for="(item, index) in visibleHistory" :key="item.id">
           <button
             class="history-row"
             :class="{ selected: commit?.id === item.id }"
             @click="emit('select-commit', item.id)"
           >
-            <span class="history-number">{{ String(index + 1).padStart(2, "0") }}</span
+            <span class="history-number">{{
+              String(inspection.history.length - visibleHistory.length + index + 1).padStart(2, "0")
+            }}</span
             ><span
-              ><strong>{{ session.actorName(item.subject.signer.id) }}</strong
+              ><strong>{{ (actorName ?? short)(item.subject.signer.id) }}</strong
               ><span class="mono small">{{ short(item.id, 18) }}</span></span
             ><span class="history-time"
               >{{ prettyDate(item.subject.committedAt)
@@ -133,6 +156,9 @@ const prettyDate = (input: string) => {
             >
           </button>
         </li>
+        <li v-if="inspection.history.length > historyLimit">
+          <button class="text-button" @click="historyLimit += 100">Show older commits</button>
+        </li>
       </ol>
       <div v-if="commit" class="commit-detail">
         <div class="section-heading">
@@ -142,7 +168,7 @@ const prettyDate = (input: string) => {
         <pre class="code-block" tabindex="0">{{ format(commit) }}</pre>
         <h3 class="spaced-heading">Included entries</h3>
         <button
-          v-for="id in commit.subject.entryIds"
+          v-for="id in commit.subject.entryIds.slice(0, entryLimit)"
           :key="id"
           class="entry-link mono"
           :disabled="busy || blocked"
@@ -150,10 +176,17 @@ const prettyDate = (input: string) => {
         >
           {{ short(id, 28) }} <span aria-hidden="true">↗</span>
         </button>
+        <button
+          v-if="commit.subject.entryIds.length > entryLimit"
+          class="text-button"
+          @click="entryLimit += 100"
+        >
+          Show more entries
+        </button>
       </div>
       <div v-else class="empty-state">
         <h3>No history available</h3>
-        <p>Open Stored JSON and Verification to inspect this input.</p>
+        <p>Open the source and verification views to inspect this input.</p>
       </div>
     </div>
   </section>
@@ -161,36 +194,43 @@ const prettyDate = (input: string) => {
   <section v-else-if="view === 'json'" class="document-panel">
     <div class="panel-heading">
       <div>
-        <h2>Stored JSON</h2>
+        <h2>{{ editable ? "Stored JSON" : "Original source" }}</h2>
       </div>
       <button class="button subtle" :disabled="busy" @click="emit('copy')">Copy JSON</button>
     </div>
-    <p class="muted panel-description">The exported file. Edit it to test verification.</p>
-    <label class="sr-only" for="raw-json">Document JSON editor</label
+    <p class="muted panel-description">
+      {{
+        editable
+          ? "The exported file. Edit it to test verification."
+          : "Original source. Inspection never rewrites your file."
+      }}
+    </p>
+    <label class="sr-only" for="raw-json">{{
+      editable ? "Document JSON editor" : "Original document source"
+    }}</label
     ><textarea
       id="raw-json"
       class="raw-editor"
       :value="raw"
+      :readonly="!editable"
       spellcheck="false"
       @input="emit('update:raw', ($event.target as HTMLTextAreaElement).value)"
     ></textarea>
-    <div class="raw-actions">
+    <div v-if="editable" class="raw-actions">
       <button
         class="button primary"
-        :disabled="busy || blocked || !!session.handle.draft()"
+        :disabled="busy || blocked || !!hasDraft"
         @click="emit('apply')"
       >
         Apply & verify</button
       ><button
         class="button subtle danger"
-        :disabled="
-          busy || blocked || !!session.handle.draft() || report.verification.integrity !== 'valid'
-        "
+        :disabled="busy || blocked || !!hasDraft || report.integrity !== 'valid'"
         @click="emit('tamper')"
       >
         Alter last signature</button
       ><button
-        v-if="session.canRestore"
+        v-if="canRestore"
         class="text-button"
         :disabled="busy || blocked"
         @click="emit('restore')"
@@ -198,7 +238,7 @@ const prettyDate = (input: string) => {
         Restore previous document
       </button>
     </div>
-    <p class="small muted">
+    <p v-if="editable" class="small muted">
       Applying replaces this document. Restore keeps one previous version in memory. Staged changes
       are excluded.
     </p>
@@ -213,89 +253,89 @@ const prettyDate = (input: string) => {
         Recheck <span aria-hidden="true">↻</span>
       </button>
     </div>
-    <div
-      class="verification-banner"
-      :class="{ invalid: report.verification.integrity !== 'valid' }"
-    >
+    <div class="verification-banner" :class="{ invalid: report.integrity !== 'valid' }">
       <span class="verification-mark" aria-hidden="true">{{
-        report.verification.integrity === "valid" ? "✓" : "!"
+        report.integrity === "valid" ? "✓" : "!"
       }}</span>
       <div>
         <h3>
           {{
-            report.verification.integrity === "valid"
+            report.integrity === "valid"
               ? "Signed history verified"
-              : "No trusted application state"
+              : "History verification did not pass"
           }}
         </h3>
         <p>
           {{
-            report.verification.integrity === "valid"
+            report.integrity === "valid"
               ? "Read access and replay are checked separately below."
-              : "Inspect or export this file. Trusted replay and writes are unavailable."
+              : "These records are inspection evidence. See the findings below."
           }}
         </p>
       </div>
     </div>
+    <p v-if="inspection.interpretationError" class="panel-description muted">
+      Concord inspection unavailable: {{ inspection.interpretationError }}
+    </p>
     <dl class="verification-list">
       <div>
         <dt>History integrity</dt>
-        <dd>{{ report.verification.integrity }}</dd>
+        <dd>{{ report.integrity }}</dd>
+      </div>
+      <div v-if="runtime">
+        <dt>Concord structure</dt>
+        <dd>{{ runtime.verification.integrity }}</dd>
       </div>
       <div>
         <dt>System replay</dt>
-        <dd>{{ report.system }}</dd>
+        <dd>{{ runtime?.system ?? "not-run" }}</dd>
       </div>
       <div>
         <dt>Application replay</dt>
-        <dd>{{ report.application }}</dd>
+        <dd>{{ runtime?.application ?? "not-run" }}</dd>
       </div>
       <div>
         <dt>Encrypted events without a key</dt>
-        <dd>{{ report.lockedEntries ?? "Not evaluated" }}</dd>
+        <dd>{{ runtime?.lockedEntries ?? "Not evaluated" }}</dd>
       </div>
       <div>
         <dt>Freshness</dt>
-        <dd>{{ report.freshness }}</dd>
+        <dd>{{ runtime?.freshness ?? "unanchored" }}</dd>
       </div>
       <div>
         <dt>Other recipients’ decryptability</dt>
-        <dd>{{ report.otherRecipientsDecryptability }}</dd>
+        <dd>{{ runtime?.otherRecipientsDecryptability ?? "unverified" }}</dd>
       </div>
       <div>
         <dt>Checked commits / entries</dt>
-        <dd>{{ report.verification.checkedCommits }} / {{ report.verification.checkedEntries }}</dd>
+        <dd>{{ report.checkedCommits }} / {{ report.checkedEntries }}</dd>
       </div>
     </dl>
     <details class="verification-help">
       <summary>What does verification prove?</summary>
       <p>
-        “Readable” replay covers the events this identity can decrypt. A valid file alone does not
-        prove it is the newest copy. Other recipients’ ability to decrypt is not proved by this
-        reader.
+        Signatures are checked against the public keys in the file; they do not establish who you
+        should trust. “Readable” replay covers the events this identity can decrypt. A valid file
+        alone does not prove it is the newest copy. Other recipients’ ability to decrypt is not
+        proved by this reader.
       </p>
     </details>
-    <div v-if="report.findings.length" class="findings">
+    <div v-if="findings.length" class="findings">
       <h3>Findings</h3>
-      <pre
-        v-for="(finding, index) in report.findings"
-        :key="index"
-        class="code-block"
-        tabindex="0"
-        >{{ format(finding) }}</pre>
+      <pre v-for="(finding, index) in findings" :key="index" class="code-block" tabindex="0">{{
+        format(finding)
+      }}</pre>
     </div>
     <p v-else class="no-findings"><span aria-hidden="true">✓</span> No verification findings.</p>
-    <div class="raw-actions">
+    <div v-if="editable" class="raw-actions">
       <button
         class="button subtle danger"
-        :disabled="
-          busy || blocked || !!session.handle.draft() || report.verification.integrity !== 'valid'
-        "
+        :disabled="busy || blocked || !!hasDraft || report.integrity !== 'valid'"
         @click="emit('tamper')"
       >
         Try changing a signature</button
       ><button
-        v-if="session.canRestore"
+        v-if="canRestore"
         class="button primary"
         :disabled="busy || blocked"
         @click="emit('restore')"

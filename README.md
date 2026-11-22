@@ -1,6 +1,6 @@
 # ternent.dev
 
-The project landing page and public demos for Ternent's five libraries. The website
+The project landing page, document inspector and public demos for Ternent's five libraries. The website
 consumes published npm packages and exercises their current contracts; core source
 is not aliased into the application.
 
@@ -48,15 +48,17 @@ release is accepted. No npm access token is needed to install these public packa
 
 ## Pages
 
-| Path                                                                      | Content                                               |
-| ------------------------------------------------------------------------- | ----------------------------------------------------- |
-| `/`, `/idea`, `/architecture`                                             | Overview, the idea and architecture                   |
-| `/identity`, `/armour`, `/seal`, `/ledger`, `/concord`                    | Building-block sections                               |
-| `/open-source`, `/about`                                                  | Source and working together                           |
-| `/examples`                                                               | Signed document, reader identities and privacy groups |
-| `/examples/json`, `/examples/history`, `/examples/verification`           | Document inspectors                                   |
-| `/demo/identity`                                                          | Local identity demo                                   |
-| `/demo/identity/create`, `/demo/identity/recover`, `/demo/identity/login` | Identity modes                                        |
+| Path                                                                             | Content                                               |
+| -------------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `/`, `/idea`, `/architecture`                                                    | Overview, the idea and architecture                   |
+| `/identity`, `/armour`, `/seal`, `/ledger`, `/concord`                           | Building-block sections                               |
+| `/open-source`, `/about`                                                         | Source and working together                           |
+| `/examples`                                                                      | Signed document, reader identities and privacy groups |
+| `/examples/json`, `/examples/history`, `/examples/verification`                  | Document inspectors                                   |
+| `/inspect`                                                                       | Standalone JSON document inspector                    |
+| `/inspect/entries`, `/inspect/history`, `/inspect/json`, `/inspect/verification` | Read-only document views                              |
+| `/demo/identity`                                                                 | Local identity demo                                   |
+| `/demo/identity/create`, `/demo/identity/recover`, `/demo/identity/login`        | Identity modes                                        |
 
 Story routes share one page and navigate to its sections. Scrolling replaces the URL
 without accumulating history entries. Legacy hashes resolve to clean paths. Unknown
@@ -110,6 +112,39 @@ freshness and other recipients' decryptability are reported separately.
 The notes example uses Ledger's common container. Earlier `concord-ledger` demo
 exports are not converted or replayed as trusted documents; their raw input remains
 inspectable. This is the same accepted alpha container break as the core libraries.
+
+## Standalone document inspector
+
+Open `/inspect` to drag in a JSON file, choose a file or paste JSON. The tool accepts
+UTF-8 text up to 16 MiB and keeps it in memory. Navigation between tools retains the
+opened file; Close or reload clears the session. File contents are not uploaded,
+stored in browser storage or executed. Download original returns the original bytes.
+
+The JSON browser supports arbitrary JSON, with lazy expansion, bounded value previews
+and paged children. The parsed view uses JavaScript number semantics and last-value
+duplicate-key handling; Source always retains the exact input. Malformed JSON remains
+available as source, without a parsed or trusted view.
+
+Current `ledger` containers, including Concord documents, use the published Ledger
+protocol verifier on **original bytes**. Hashes, signatures, schema and linkage results
+are separate from runtime findings. Valid signatures establish integrity against the
+included public keys; they do not establish personal trust, freshness or application
+validity. Unsupported suites and versions are distinguished from failed verification.
+Structurally checked but invalid history stays inspectable as untrusted evidence.
+
+Concord's signed declarations and unavailable requirements are reported through its
+published read-only runtime. No application model, system implementation, private key
+or executable plugin from a file is loaded. Missing requirements mean system and model
+replay are **not run**, even when Ledger integrity passes. Encrypted application content
+stays encrypted; public metadata and original stored records remain available. Legacy
+or other JSON formats get generic inspection with no signature-verification claim.
+
+`src/modules/inspector` owns file inspection and shared record/history/source/
+verification presentation. Examples supply their own inspection report and explicit
+authoring actions; the standalone tool exposes no mutation controls. Both use the same
+workbench styles and header. Meaningful tests cover real signed inputs, foreign models,
+tampering, duplicate keys, source/byte preservation, escaped content, failed and racing
+file opens, route navigation and preservation of unfinished example work.
 
 ## Local identity demo
 

@@ -18,6 +18,15 @@ Examples use their own full-width application shell, with compact navigation and
 separate entry, editor and inspector panes. Keep longer explanations in contextual
 help rather than wrapping demos in the landing page's story layout.
 
+`/inspect` is a standalone, read-only tool for user files. Share record/history/
+verification presentation with Examples through `src/modules/inspector`; do not tie
+it to the notes model or demo identities. Verify original bytes through Ledger's
+published protocol API. Never normalize JSON before signature verification. Keep
+integrity, application replay, unavailable requirements and unknown formats distinct.
+Files stay in memory; do not upload, persist or execute their content. Preserve tool
+sessions during in-app navigation. The explicit file limit is 16 MiB; JSON tree and
+history rendering are incremental. Browser and visual review remain Sam's.
+
 Run `pnpm check` before delivery. It checks formatting, lint, Vue/TypeScript, website
 unit tests, real-library runtime tests and the static/PWA build. Browser and
 accessibility walkthroughs are Sam's. Deliver changes as a draft PR; publishing the
