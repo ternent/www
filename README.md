@@ -68,6 +68,11 @@ Legacy playground hashes resolve to the matching examples view too.
 
 ## Examples ownership and review
 
+`/examples` has its own full-width application shell. Readers and groups sit beside
+the document; Entries separates the entry list, editor and signed-record inspector.
+History, Stored JSON and Verification use direct links that retain the session,
+editor state and navigation focus. Contextual help contains the longer explanations.
+
 `src/modules/examples/model.ts` owns note command validation, domain events and a
 pure projection. Note identifiers are scoped to their privacy group.
 `session.ts` supplies host capabilities, document bytes, authoring cadence and file

@@ -39,16 +39,14 @@ function submit() {
   <form class="note-editor" @submit.prevent="submit">
     <div class="section-heading">
       <h3>{{ note ? "Edit entry" : "New entry" }}</h3>
-      <span class="muted small">{{
-        writable ? "Encrypted for this group" : "Read-only for this identity"
-      }}</span>
+      <span class="muted small">{{ writable ? "Encrypted" : "Read-only" }}</span>
     </div>
     <fieldset :disabled="!writable || busy">
       <label for="note-title">Title</label>
       <input
         id="note-title"
         v-model="title"
-        placeholder="Give your entry a title"
+        placeholder="Untitled entry"
         maxlength="120"
         required
         autocomplete="off"
@@ -57,7 +55,7 @@ function submit() {
       <textarea
         id="note-body"
         v-model="body"
-        placeholder="Write something worth keeping…"
+        placeholder="Write an entry…"
         maxlength="8000"
         rows="4"
       ></textarea>
@@ -71,17 +69,20 @@ function submit() {
       </div>
     </fieldset>
     <p v-if="dirty" class="editor-caption">
-      Unsubmitted edits. Save or stage them before changing readers or groups.
+      Unsubmitted edits.
       <button class="text-button" type="button" :disabled="busy" @click="resetEditor">
         Reset editor
       </button>
     </p>
-    <p class="editor-caption">
-      {{
-        draft
-          ? "Staged changes are an in-memory preview. The exported file stays unchanged until you commit."
-          : "Each save appends a signed event. Editing or removing an entry preserves its earlier history."
-      }}
-    </p>
+    <details class="editor-help">
+      <summary>How changes are saved</summary>
+      <p>
+        {{
+          draft
+            ? "Staged changes stay in memory until you commit. Exports contain only committed history."
+            : "Each save appends a signed event. Earlier history stays in the file, including after an entry is removed."
+        }}
+      </p>
+    </details>
   </form>
 </template>

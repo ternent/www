@@ -50,10 +50,9 @@ const prettyDate = (input: string) => {
 <template>
   <section v-if="view === 'entry'" class="entry-inspector" aria-label="Entry inspector">
     <div class="section-heading">
-      <h2>Under the surface</h2>
-      <span class="eyebrow">Live inspector</span>
+      <h2>Entry inspector</h2>
+      <span class="eyebrow">Stored & readable</span>
     </div>
-    <p class="muted small">Select an entry to connect what you read with what is stored.</p>
     <template v-if="entry">
       <dl class="compact-facts">
         <div>
@@ -65,7 +64,7 @@ const prettyDate = (input: string) => {
           <dd>{{ entry.subject.kind }}</dd>
         </div>
       </dl>
-      <div class="code-heading">
+      <div class="code-heading readable-heading">
         <h3>Readable event</h3>
         <span
           class="status-dot"
@@ -86,7 +85,7 @@ const prettyDate = (input: string) => {
             ? format(replayed.event)
             : "The event is encrypted. This identity has no readable payload for it."
       }}</pre>
-      <div class="code-heading">
+      <div class="code-heading stored-heading">
         <h3>Stored entry</h3>
         <span class="eyebrow">Exact signed record</span>
       </div>
@@ -94,35 +93,25 @@ const prettyDate = (input: string) => {
     </template>
     <div v-else class="inspector-empty">
       <span class="empty-symbol" aria-hidden="true">{ }</span>
-      <p>No readable entry selected.</p>
+      <p>No entry selected.</p>
       <p class="muted small">
-        You can still inspect every stored record in Stored JSON, including ciphertext and public
-        membership metadata.
+        Select a note, or open Stored JSON to inspect encrypted records and public metadata.
       </p>
     </div>
     <div class="inspector-footnote">
-      <span class="tiny-square" aria-hidden="true"></span>
-      <p>
-        Note titles and contents are encrypted in the exported document. Public system metadata
-        remains readable.
-      </p>
+      <p>Titles and content are encrypted. System metadata is public.</p>
     </div>
   </section>
 
   <section v-else-if="view === 'history'" class="document-panel">
     <div class="panel-heading">
       <div>
-        <span class="eyebrow">Append-only</span>
         <h2>Signed history</h2>
       </div>
       <span class="pill" :class="{ warning: report.verification.integrity !== 'valid' }">{{
         report.verification.integrity === "valid" ? "Verified history" : "Untrusted inspection"
       }}</span>
     </div>
-    <p class="muted panel-description">
-      Edits add events. Earlier commits remain in the file. A signature binds each commit to its
-      parent and ordered entries.
-    </p>
     <div class="history-grid">
       <ol class="history-list">
         <li v-for="(item, index) in report.history" :key="item.id">
@@ -172,17 +161,11 @@ const prettyDate = (input: string) => {
   <section v-else-if="view === 'json'" class="document-panel">
     <div class="panel-heading">
       <div>
-        <span class="eyebrow">The portable document</span>
         <h2>Stored JSON</h2>
       </div>
-      <button class="button subtle" :disabled="busy" @click="emit('copy')">
-        Copy committed JSON
-      </button>
+      <button class="button subtle" :disabled="busy" @click="emit('copy')">Copy JSON</button>
     </div>
-    <p class="muted panel-description">
-      This is the full exported file: signed history, public metadata and encrypted payloads. Edit
-      it here and apply your changes to test verification.
-    </p>
+    <p class="muted panel-description">The exported file. Edit it to test verification.</p>
     <label class="sr-only" for="raw-json">Document JSON editor</label
     ><textarea
       id="raw-json"
@@ -216,19 +199,18 @@ const prettyDate = (input: string) => {
       </button>
     </div>
     <p class="small muted">
-      Applying raw input replaces this tab’s document. One previous version is kept in memory for
-      Restore. A staged preview is never included here.
+      Applying replaces this document. Restore keeps one previous version in memory. Staged changes
+      are excluded.
     </p>
   </section>
 
   <section v-else class="document-panel">
     <div class="panel-heading">
       <div>
-        <span class="eyebrow">Trust is checked</span>
         <h2>Verification</h2>
       </div>
       <button class="button subtle" :disabled="busy" @click="emit('verify')">
-        Verify again <span aria-hidden="true">↻</span>
+        Recheck <span aria-hidden="true">↻</span>
       </button>
     </div>
     <div
@@ -242,15 +224,15 @@ const prettyDate = (input: string) => {
         <h3>
           {{
             report.verification.integrity === "valid"
-              ? "The signed history is intact."
-              : "This input cannot provide a trusted projection."
+              ? "Signed history verified"
+              : "No trusted application state"
           }}
         </h3>
         <p>
           {{
             report.verification.integrity === "valid"
-              ? "Signatures and reachable history verified. Read access and application replay are reported separately below."
-              : "The file remains available for inspection and export. Writes and trusted application state are unavailable."
+              ? "Read access and replay are checked separately below."
+              : "Inspect or export this file. Trusted replay and writes are unavailable."
           }}
         </p>
       </div>
@@ -285,11 +267,14 @@ const prettyDate = (input: string) => {
         <dd>{{ report.verification.checkedCommits }} / {{ report.verification.checkedEntries }}</dd>
       </div>
     </dl>
-    <p class="muted small">
-      “Readable” replay covers the events this identity can decrypt. A valid file alone does not
-      prove it is the newest copy. Other recipients’ ability to decrypt is not proved by this
-      reader.
-    </p>
+    <details class="verification-help">
+      <summary>What does verification prove?</summary>
+      <p>
+        “Readable” replay covers the events this identity can decrypt. A valid file alone does not
+        prove it is the newest copy. Other recipients’ ability to decrypt is not proved by this
+        reader.
+      </p>
+    </details>
     <div v-if="report.findings.length" class="findings">
       <h3>Findings</h3>
       <pre

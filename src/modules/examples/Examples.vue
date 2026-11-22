@@ -4,6 +4,7 @@ import { useRoute, useRouter } from "vue-router";
 import type { AudienceId } from "@ternent/concord";
 import { actors, NotesSession, short, type ActorId } from "./session";
 import type { Note } from "./model";
+import { packageVersions } from "@/app/config/packages";
 import NoteEditor from "./NoteEditor.vue";
 import InspectorPanel from "./InspectorPanel.vue";
 
@@ -123,7 +124,7 @@ async function start() {
     audience.value = "document";
     selectedNoteId.value = "welcome";
     selectedEntryId.value = null;
-    notice.value = "Demo ready. Try reading the same document as Bob.";
+    notice.value = "Ready. Try a different reader to explore access.";
     isError.value = false;
   } catch (cause) {
     notice.value = cause instanceof Error ? cause.message : "Could not create the demo.";
@@ -230,37 +231,42 @@ function reset() {
   <div class="concord-examples">
     <div v-if="!app" class="loading-state">
       <div class="loading-glyph" aria-hidden="true">{ }</div>
-      <h2>Preparing your document.</h2>
+      <h2>Opening your document</h2>
       <p :role="isError ? 'alert' : 'status'">{{ notice }}</p>
       <button v-if="isError" class="button primary" @click="start">Try again</button>
     </div>
 
     <template v-else>
       <aside class="sidebar" aria-label="Readers and privacy groups">
-        <div class="sidebar-intro">
-          <span class="eyebrow">A different point of view</span>
-          <h2>Who’s reading?</h2>
-          <p>Same bytes. Different keys.</p>
+        <div class="sidebar-section reader-section">
+          <h2 class="sidebar-label">Read as</h2>
+          <div class="identity-list">
+            <button
+              v-for="actor in actors"
+              :key="actor.id"
+              class="identity-button"
+              :class="{ active: app.reader === actor.id }"
+              :aria-pressed="app.reader === actor.id"
+              :disabled="busy || !!draft || editorDirty"
+              @click="switchReader(actor.id)"
+            >
+              <span class="avatar" :class="actor.id">{{ actor.initials }}</span>
+              <span class="identity-copy"
+                ><strong>{{ actor.name }}</strong
+                ><small>{{
+                  actor.id === "none" ? "Public view" : short(app.publicIdentity(actor.id)!.id, 12)
+                }}</small></span
+              >
+              <span v-if="app.reader === actor.id" class="identity-check" aria-hidden="true"
+                >✓</span
+              >
+            </button>
+          </div>
         </div>
-        <div class="identity-list">
+
+        <div class="sidebar-section groups-section">
+          <h2 class="sidebar-label">Privacy groups</h2>
           <button
-            v-for="actor in actors"
-            :key="actor.id"
-            class="identity-button"
-            :class="{ active: app.reader === actor.id }"
-            :aria-pressed="app.reader === actor.id"
-            :disabled="busy || !!draft || editorDirty"
-            @click="switchReader(actor.id)"
-          >
-            <span class="avatar" :class="actor.id">{{ actor.initials }}</span
-            ><span class="identity-copy"
-              ><strong>{{ actor.name }}</strong><small>{{ actor.role }}</small></span
-            ><span v-if="app.reader === actor.id" class="identity-check" aria-hidden="true">✓</span>
-          </button>
-        </div>
-        <div class="sidebar-section">
-          <span class="eyebrow">Privacy groups</span
-          ><button
             v-for="group in groups"
             :key="group.audience"
             class="group-button"
@@ -285,32 +291,52 @@ function reset() {
                 fill="none"
                 stroke="currentColor"
                 stroke-width="1.4"
-              /></svg
-            ><span>{{ app.groupName(group.audience) }}</span
-            ><span class="group-arrow" aria-hidden="true">↗</span>
+              />
+            </svg>
+            <span>{{ app.groupName(group.audience) }}</span>
           </button>
-          <p v-if="!groups.length" class="small muted">
-            Group metadata is unavailable for this input.
-          </p>
+          <p v-if="!groups.length" class="small muted">No group metadata available.</p>
         </div>
-        <div class="document-anchor">
-          <span class="eyebrow">Document ID</span
-          ><span class="mono" :title="report?.verification.documentId ?? ''">{{
-            report?.verification.documentId
-              ? short(report.verification.documentId, 21)
-              : "Unavailable"
-          }}</span
-          ><span class="sidebar-local"
-            ><span class="status-light" aria-hidden="true"></span> Processing in this tab</span
-          >
+
+        <div class="sidebar-bottom">
+          <div class="document-anchor">
+            <span class="sidebar-label">Document</span>
+            <span class="mono" :title="report?.verification.documentId ?? ''">{{
+              report?.verification.documentId
+                ? short(report.verification.documentId, 19)
+                : "Unavailable"
+            }}</span>
+          </div>
+          <button class="reset-demo" :disabled="busy" @click="reset">
+            <span aria-hidden="true">↻</span> Start fresh
+          </button>
+          <details class="demo-help">
+            <summary>About this example <span aria-hidden="true">?</span></summary>
+            <p>One signed file, three demo identities. Switch readers to try different keys.</p>
+            <p>
+              Keys and drafts stay in this tab. Reloading clears them. Exports contain committed
+              history and no private keys.
+            </p>
+            <p>
+              Keep this tab open to decrypt a file you re-import. This simulates several readers in
+              one session.
+            </p>
+            <a :href="`https://www.npmjs.com/package/@ternent/concord/v/${packageVersions.concord}`"
+              >Concord {{ packageVersions.concord }} ↗</a
+            >
+          </details>
+          <span class="local-indicator"><span aria-hidden="true"></span> Runs in your browser</span>
         </div>
       </aside>
 
       <section class="main" aria-label="Example document">
-        <section class="intro">
-          <div>
-            <span class="eyebrow">One signed document</span>
-            <h2>Different keys.<br />Different view.</h2>
+        <div class="intro">
+          <div class="document-title">
+            <span class="document-glyph" aria-hidden="true">{ }</span>
+            <div>
+              <h2>Encrypted notes</h2>
+              <span class="small muted">Concord · signed, portable history</span>
+            </div>
           </div>
           <div class="document-actions">
             <input
@@ -321,56 +347,37 @@ function reset() {
               accept="application/json,.json"
               aria-label="Import a Concord document"
               @change="importDocument"
-            /><button
+            />
+            <button
               class="button subtle"
               :disabled="busy || !!draft || editorDirty"
               @click="upload?.click()"
             >
-              Import JSON <span aria-hidden="true">↓</span></button
-            ><button class="button primary" :disabled="busy" @click="exportDocument">
-              Export document <span aria-hidden="true">↗</span>
+              <span aria-hidden="true">↓</span> Import
+            </button>
+            <button class="button primary" :disabled="busy" @click="exportDocument">
+              Export <span aria-hidden="true">↗</span>
             </button>
           </div>
-        </section>
-
-        <div class="status-strip">
-          <span
-            class="status-dot"
-            :class="{ warning: report?.verification.integrity !== 'valid' }"
-            >{{
-              report?.verification.integrity === "valid" ? "History verified" : "Inspection only"
-            }}</span
-          ><span><strong>{{ projection?.notes.length ?? "—" }}</strong> readable notes</span
-          ><span
-            ><strong>{{ report?.lockedEntries ?? "—" }}</strong> encrypted events without a
-            key</span
-          ><span class="head-label mono" :title="report?.verification.head ?? ''"
-            >head
-            {{
-              report?.verification.head ? short(report.verification.head, 10) : "unavailable"
-            }}</span
-          >
         </div>
+
         <div class="view-bar">
           <nav aria-label="Document views">
-            <button
+            <RouterLink
               v-for="item in views"
               :key="item.id"
+              :to="item.id === 'entries' ? '/examples' : `/examples/${item.id}`"
               :class="{ active: view === item.id }"
-              :aria-pressed="view === item.id"
-              @click="view = item.id"
+              :aria-current="view === item.id ? 'page' : undefined"
+              >{{ item.label }}</RouterLink
             >
-              {{ item.label }}
-            </button>
           </nav>
           <span class="viewer-caption">Reading as <strong>{{ currentActor?.name }}</strong></span>
         </div>
+
         <div v-if="editorDirty && view !== 'entries'" class="draft-banner">
           <div>
-            <strong>Unsubmitted editor text</strong
-            ><span
-              >Return to Entries to save, stage or reset it before replacing the document.</span
-            >
+            <strong>Unsubmitted editor text</strong><span>Your edits are waiting in Entries.</span>
           </div>
           <button class="button subtle" @click="view = 'entries'">Back to editor</button>
         </div>
@@ -379,7 +386,7 @@ function reset() {
             <strong
               >{{ draft.entryCount }} staged
               {{ draft.entryCount === 1 ? "event" : "events" }}</strong
-            ><span>Preview only · export still contains committed history</span>
+            ><span>Preview only · not yet in the exported file</span>
           </div>
           <button
             class="button subtle"
@@ -388,8 +395,9 @@ function reset() {
               run(() => app!.discard(), 'Staged changes discarded. Committed history is unchanged.')
             "
           >
-            Discard</button
-          ><button
+            Discard
+          </button>
+          <button
             class="button primary"
             :disabled="busy"
             @click="run(() => app!.commit(), 'Staged events encrypted and committed together.')"
@@ -403,19 +411,29 @@ function reset() {
             <div class="panel-heading">
               <div>
                 <span class="eyebrow">{{
-                  audience === "document" ? "Default privacy group" : "Independent privacy group"
+                  audience === "document" ? "Shared group" : "Independent group"
                 }}</span>
                 <h2>{{ app.groupName(audience) }}</h2>
               </div>
               <button
-                class="button subtle small-button"
+                class="new-entry"
+                aria-label="New entry"
                 :disabled="busy || !writable || editorDirty"
                 @click="selectedNoteId = null"
               >
-                + New entry
+                +
               </button>
             </div>
-            <div class="group-access">
+            <details class="group-access">
+              <summary>
+                Access
+                <span
+                  >{{
+                    groups.find((group) => group.audience === audience)?.members.length ?? 0
+                  }}
+                  members</span
+                >
+              </summary>
               <div class="member-stack">
                 <span
                   v-for="member in groups.find((group) => group.audience === audience)?.members"
@@ -435,20 +453,17 @@ function reset() {
                   run(
                     () => app!.setBobAccess(audience, !bobIsMember),
                     bobIsMember
-                      ? 'Bob removed. Previously shared history stays readable; future entries use a new group key.'
+                      ? 'Bob removed. Earlier history stays readable; future entries use a new group key.'
                       : 'Bob admitted with read/write access, including this group’s history.',
                   )
                 "
               >
                 {{ bobIsMember ? "Remove Bob" : "Give Bob access" }}
               </button>
-            </div>
-            <p
-              v-if="audience === app.privateAudience && app.reader !== 'alice'"
-              class="group-explanation"
-            >
-              This is an independent group. Membership of Shared notes does not grant access here.
-            </p>
+              <p>
+                Removal protects future entries. It cannot retract history or keys already shared.
+              </p>
+            </details>
             <div v-if="notes.length" class="entry-list">
               <button
                 v-for="note in notes"
@@ -458,19 +473,11 @@ function reset() {
                 :class="{ selected: selectedNoteId === note.id }"
                 @click="selectedNoteId = note.id"
               >
-                <span class="entry-document-icon" aria-hidden="true"
-                  ><svg viewBox="0 0 24 24">
-                    <path
-                      d="M6 3h8l4 4v14H6zM14 3v5h4M9 12h6M9 16h5"
-                      fill="none"
-                      stroke="currentColor"
-                      stroke-width="1.4"
-                      stroke-linejoin="round"
-                    /></svg></span
-                ><span class="entry-copy"
+                <span class="entry-copy"
                   ><strong>{{ note.title }}</strong
                   ><span>{{ note.body || "An empty entry." }}</span></span
-                ><span class="entry-arrow" aria-hidden="true">↗</span>
+                >
+                <span class="entry-arrow" aria-hidden="true">→</span>
               </button>
             </div>
             <div v-else class="empty-state">
@@ -480,17 +487,17 @@ function reset() {
                   state?.status !== "ready"
                     ? "Inspection only"
                     : lockedInGroup
-                      ? "The contents stay encrypted."
-                      : "A little room for your data."
+                      ? "Encrypted for another reader"
+                      : "No entries yet"
                 }}
               </h3>
               <p>
                 {{
                   state?.status !== "ready"
-                    ? "See Verification for the reason this input cannot produce trusted notes."
+                    ? "Open Verification to inspect this input."
                     : lockedInGroup
-                      ? "This reader has no key for the events in this group. The stored records are still available to inspect."
-                      : "Add an entry to this group to see it encrypted and signed."
+                      ? "This reader has no key for these events."
+                      : "Add your first entry with the + button."
                 }}
               </p>
             </div>
@@ -500,13 +507,13 @@ function reset() {
                 <strong
                   >{{ lockedInGroup }} encrypted
                   {{ lockedInGroup === 1 ? "event" : "events" }}</strong
-                ><span
-                  >Titles and contents are unavailable to this reader. Event count is not a count of
-                  distinct notes.</span
-                >
+                ><span>May include changes to the same entry.</span>
               </p>
-              <button class="text-button" @click="view = 'json'">Inspect JSON ↗</button>
+              <button class="text-button" @click="view = 'json'">Inspect ↗</button>
             </div>
+          </section>
+
+          <section class="editor-panel" aria-label="Entry editor">
             <NoteEditor
               :key="`${audience}:${selectedNoteId}`"
               :note="selectedNote"
@@ -542,16 +549,15 @@ function reset() {
                     )
                   "
                 />
-                Commit each change automatically</label
+                Auto-commit</label
               ><span class="small muted">{{
-                app.mode === "immediate" ? "One change → one commit" : "Stage → review → commit"
+                app.mode === "immediate"
+                  ? "Each save signs a commit"
+                  : "Stage, then commit together"
               }}</span>
             </div>
-            <p class="membership-caption">
-              Removing a member protects future entries. It cannot retract history or keys already
-              shared.
-            </p>
           </section>
+
           <InspectorPanel
             :session="app"
             :revision="revision"
@@ -563,6 +569,7 @@ function reset() {
             :busy="busy"
           />
         </div>
+
         <InspectorPanel
           v-if="view !== 'entries'"
           :session="app"
@@ -587,25 +594,36 @@ function reset() {
             )
           "
         />
-        <div
-          class="notice"
-          :class="{ error: isError, working: busy }"
-          :role="isError ? 'alert' : 'status'"
-          aria-live="polite"
-        >
-          <span class="notice-symbol" aria-hidden="true">{{
-            busy ? "◌" : isError ? "!" : "✓"
-          }}</span
-          >{{ busy ? "Working locally…" : notice }}
+
+        <div class="workspace-status">
+          <div
+            class="notice"
+            :class="{ error: isError, working: busy }"
+            :role="isError ? 'alert' : 'status'"
+            aria-live="polite"
+          >
+            <span class="notice-symbol" aria-hidden="true">{{
+              busy ? "◌" : isError ? "!" : "✓"
+            }}</span
+            >{{ busy ? "Working locally…" : notice }}
+          </div>
+          <div class="status-strip">
+            <span
+              class="status-dot"
+              :class="{ warning: report?.verification.integrity !== 'valid' }"
+              >{{
+                report?.verification.integrity === "valid" ? "Verified" : "Inspection only"
+              }}</span
+            ><span>{{ projection?.notes.length ?? "—" }} readable notes</span
+            ><span>{{ report?.lockedEntries ?? "—" }} locked events</span
+            ><span class="head-label mono" :title="report?.verification.head ?? ''"
+              >head
+              {{
+                report?.verification.head ? short(report.verification.head, 10) : "unavailable"
+              }}</span
+            >
+          </div>
         </div>
-        <footer class="footer">
-          <p>
-            Three demo identities live in this tab. Switching readers passes different keys to
-            Concord; this demonstrates access, not isolated user sessions. Reloading clears the keys
-            and unfinished work. Keep the tab open to decrypt re-imported files.
-          </p>
-          <span class="mono">@ternent/concord<br />0.3.0-alpha.1</span>
-        </footer>
       </section>
     </template>
   </div>

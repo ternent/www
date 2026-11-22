@@ -10,6 +10,7 @@ import { flushPromises, mount } from "@vue/test-utils";
 import { afterAll, afterEach, expect, test, vi } from "vitest";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import { routes } from "@/routes";
+import App from "@/App.vue";
 
 const cleanups: Array<() => void> = [];
 afterAll(() => vi.unstubAllGlobals());
@@ -17,15 +18,27 @@ afterEach(() => {
   cleanups.splice(0).forEach((cleanup) => cleanup());
 });
 
-async function open(path: string) {
+async function open(path: string, withShell = false) {
   await cryptoReady;
   // jsdom supplies DOM APIs; real Node Web Crypto supplies the browser's cryptographic primitives.
   vi.stubGlobal("crypto", webcrypto);
   const router = createRouter({ history: createMemoryHistory(), routes });
   await router.push(path);
   await router.isReady();
-  const wrapper = mount(RouterView, { global: { plugins: [router] } });
-  cleanups.push(() => wrapper.unmount());
+  const host = document.createElement("div");
+  document.body.append(host);
+  if (withShell) {
+    vi.stubGlobal("requestAnimationFrame", () => 0);
+    vi.stubGlobal("cancelAnimationFrame", () => undefined);
+  }
+  const wrapper = mount(withShell ? App : RouterView, {
+    attachTo: host,
+    global: { plugins: [router], stubs: { ThemeModeToggle: true } },
+  });
+  cleanups.push(() => {
+    wrapper.unmount();
+    host.remove();
+  });
   await vi.waitFor(
     () => {
       const error = wrapper.find('[role="alert"]');
@@ -36,6 +49,21 @@ async function open(path: string) {
   );
   return { router, wrapper };
 }
+
+test("document navigation keeps keyboard focus and the same verified document in the app shell", async () => {
+  const { router, wrapper } = await open("/examples", true);
+  const head = wrapper.get(".head-label").text();
+  const jsonLink = wrapper.get<HTMLAnchorElement>('.view-bar a[href="/examples/json"]');
+  jsonLink.element.focus();
+  await jsonLink.trigger("click");
+  await flushPromises();
+  expect(router.currentRoute.value.path).toBe("/examples/json");
+  expect(document.activeElement).toBe(jsonLink.element);
+  expect(jsonLink.attributes("aria-current")).toBe("page");
+  expect(wrapper.get(".head-label").text()).toBe(head);
+  expect(wrapper.find(".site-footer").exists()).toBe(false);
+  expect(wrapper.find(".examples-header").exists()).toBe(true);
+}, 15_000);
 
 test("old playground inspector URLs redirect to examples while retaining query and selection", async () => {
   const { router, wrapper } = await open("/playground/json?source=bookmark#stored-entry");

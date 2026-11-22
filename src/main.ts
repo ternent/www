@@ -17,6 +17,8 @@ export const createApp = ViteSSG(
     scrollBehavior(to, from, savedPosition) {
       if (consumeSectionScroll(to.fullPath)) return false;
       if (savedPosition) return { ...savedPosition, behavior: "auto" };
+      const examplePath = (path: string) => path === "/examples" || path.startsWith("/examples/");
+      if (examplePath(to.path) && examplePath(from.path)) return false;
       const section = to.meta.storySection;
       if (typeof section === "string") {
         const behavior =

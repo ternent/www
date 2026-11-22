@@ -14,6 +14,9 @@ The examples page delegates history, cryptography and replay to published packag
 Its keys and drafts stay in memory. Inspect public metadata honestly and never invent
 contents for locked events. Invalid history cannot expose trusted application state.
 Changing inspector routes must retain the session and unfinished work.
+Examples use their own full-width application shell, with compact navigation and
+separate entry, editor and inspector panes. Keep longer explanations in contextual
+help rather than wrapping demos in the landing page's story layout.
 
 Run `pnpm check` before delivery. It checks formatting, lint, Vue/TypeScript, website
 unit tests, real-library runtime tests and the static/PWA build. Browser and
