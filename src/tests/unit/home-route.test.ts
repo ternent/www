@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import RouteHome from "@/routes/home/RouteHome.vue";
 import { routes } from "@/routes";
-import { consumeSectionScroll, replaceVisibleSection, sectionPaths } from "@/routes/home/navigation";
+import {
+  consumeSectionScroll,
+  replaceVisibleSection,
+  sectionPaths,
+} from "@/routes/home/navigation";
 import { useThemeMode } from "@/modules/ui";
 
 describe("RouteHome", () => {
@@ -33,10 +37,13 @@ describe("RouteHome", () => {
   it("fades section content without shifting its text", () => {
     let onIntersection: IntersectionObserverCallback | undefined;
     const observer = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
-    vi.stubGlobal("IntersectionObserver", vi.fn(function (callback: IntersectionObserverCallback) {
-      onIntersection = callback;
-      return observer;
-    }));
+    vi.stubGlobal(
+      "IntersectionObserver",
+      vi.fn(function (callback: IntersectionObserverCallback) {
+        onIntersection = callback;
+        return observer;
+      }),
+    );
     const wrapper = shallowMount(RouteHome, {
       global: {
         stubs: {
@@ -47,7 +54,10 @@ describe("RouteHome", () => {
 
     try {
       const content = wrapper.get("#concord > div").element;
-      const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({ cancel: vi.fn(), onfinish: null }));
+      const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({
+        cancel: vi.fn(),
+        onfinish: null,
+      }));
       Object.defineProperty(content, "animate", { value: animate });
       onIntersection?.(
         [{ target: content, isIntersecting: true } as IntersectionObserverEntry],

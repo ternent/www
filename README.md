@@ -1,96 +1,142 @@
 # ternent.dev
 
-The website for Ternent's open-source tools for local-first, encrypted, verifiable software. It includes an architecture walkthrough, an interactive Concord playground, and a local identity demo.
+The project landing page and public demos for Ternent's five libraries. The website
+consumes published npm packages and exercises their current contracts; core source
+is not aliased into the application.
 
-Built with Vue 3, TypeScript, Vue Router, Tailwind CSS, and `@ternent/ui`. Vite SSG generates static pages, with client-side navigation and a production service worker.
+## Development
 
-## Local development
-
-Install Node.js and pnpm, then run:
+Use Node 26.13.1 and pnpm 12.21.0, pinned in the version files and package manifest.
 
 ```sh
-pnpm install
+pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-Use the local URL printed by Vite. The site and demos run without a backend or environment variables.
-
-To build and preview the production site:
-
 ```sh
-pnpm build
-pnpm preview
+pnpm check
+pnpm preview --port 4174
 ```
 
-The build writes `dist/` and verifies the web manifest, icons, service-worker precache assets, and manifest links in the generated pages. Service-worker registration runs in production builds.
+`pnpm check` runs formatting, lint, Vue/TypeScript, website unit tests, actual-library
+runtime tests and the production build. The build also verifies generated pages,
+manifest links, icons, initial navigation scripts and service-worker precache assets.
+Browser interaction and accessibility walkthroughs are Sam's; `pnpm test:e2e` provides
+Playwright checks for the current routes and production preview.
+
+Vue, Vue Router, Tailwind and Vite SSG provide the site. Vite+ supplies the shared
+Vite/Vitest, formatter and linter. The Vite/Vitest package overrides match Vite+'s
+bundled versions; Vue SFC checks use `vue-tsc` with the maintained TypeScript 6 API.
+Website markup, brand SVG and palette values are owned here. No Ternent UI package
+or theme generator is required.
+
+## Published package baseline
+
+| Package             | Reviewed version |
+| ------------------- | ---------------- |
+| `@ternent/identity` | `0.6.0-alpha.1`  |
+| `@ternent/armour`   | `0.3.0-alpha.1`  |
+| `@ternent/ledger`   | `0.2.0-alpha.1`  |
+| `@ternent/concord`  | `0.3.0-alpha.1`  |
+| `@ternent/seal`     | `0.5.0-alpha.1`  |
+
+These are exact pins with a committed lockfile. `renovate.json` follows the `next`
+dist-tag for the five libraries, groups their updates and requires review. Enable the
+Renovate GitHub App for `ternent/www` to activate those update PRs; configuration alone
+does not run an updater. The website CI checks the resulting contracts before a
+release is accepted. No npm access token is needed to install these public packages.
 
 ## Pages
 
-| Path | Content |
-| --- | --- |
-| `/` | Overview |
-| `/idea` | The idea |
-| `/architecture` | Architecture and building blocks |
-| `/identity`, `/armour`, `/seal`, `/ledger`, `/concord` | Individual building-block sections |
-| `/open-source` | Source repositories |
-| `/about` | Work together |
-| `/playground` | Rebuild application state from encrypted, signed history |
-| `/playground/json`, `/playground/history`, `/playground/verification` | Playground inspectors |
-| `/demo/identity` | Create or unlock a local identity |
-| `/demo/identity/create`, `/demo/identity/recover`, `/demo/identity/login` | Identity demo modes |
+| Path                                                                      | Content                                               |
+| ------------------------------------------------------------------------- | ----------------------------------------------------- |
+| `/`, `/idea`, `/architecture`                                             | Overview, the idea and architecture                   |
+| `/identity`, `/armour`, `/seal`, `/ledger`, `/concord`                    | Building-block sections                               |
+| `/open-source`, `/about`                                                  | Source and working together                           |
+| `/playground`                                                             | Signed document, reader identities and privacy groups |
+| `/playground/json`, `/playground/history`, `/playground/verification`     | Document inspectors                                   |
+| `/demo/identity`                                                          | Local identity demo                                   |
+| `/demo/identity/create`, `/demo/identity/recover`, `/demo/identity/login` | Identity modes                                        |
 
-The story routes share one page and navigate to their corresponding sections. Scrolling updates the URL without adding history entries. Legacy section hashes, such as `/#history`, resolve to clean paths such as `/ledger`. Unknown routes return to `/`.
+Story routes share one page and navigate to its sections. Scrolling replaces the URL
+without accumulating history entries. Legacy hashes resolve to clean paths. Unknown
+routes return to `/`. All playground inspector routes reuse the same component and
+retain the current session and unfinished work.
 
-The playground uses the published Identity, Armour, Ledger, and Concord packages for encryption, signatures, verification, and replay. Its disposable identity and state stay in memory; reloading clears the session. The separate identity demo stores an encrypted identity in browser local storage.
+## Playground ownership and review
 
-## Subdomains
+`src/modules/playground/model.ts` owns note command validation, domain events and a
+pure projection. Note identifiers are scoped to their privacy group.
+`session.ts` supplies host capabilities, document bytes, authoring cadence and file
+operations. Concord owns command/authority/encryption replay and composes the
+Ledger-owned container and signed history. The UI renders actual projection,
+inspection and verification results. No crypto or history engine is duplicated here.
+See [core's common-container decision](https://github.com/ternent/core/blob/main/docs/adr/0018-use-one-ledger-container-for-concord.md).
 
-The five suite subdomains serve the app through Cloudflare Workers. On page load, the browser replaces the subdomain URL with its destination on `https://ternent.dev`:
+Suggested review:
 
-| Subdomain | Destination |
-| --- | --- |
-| `seal.ternent.dev` | `/seal` |
-| `identity.ternent.dev` | `/identity` |
-| `concord.ternent.dev` | `/concord` |
-| `ledger.ternent.dev` | `/ledger` |
-| `armour.ternent.dev` | `/armour` |
+1. Read Shared notes as Alice and Bob; both can edit the default group.
+2. Read Alice's independent group as Bob. Membership of the default group grants no
+   access here. Eve and No identity see no readable notes, while public membership,
+   history, timing, event counts and ciphertext remain inspectable.
+3. Disable automatic commit, stage changes and inspect the unchanged committed JSON.
+   Commit creates a signed history boundary; discard leaves that history unchanged.
+4. Follow an entry into its stored record and history. Navigate between inspector
+   routes, including directly loaded URLs, without resetting the reader or work.
+5. Export and reopen in the same tab. Change a signature or raw JSON, inspect the
+   actual verification failures, then restore the previous document.
+6. Remove Bob, append another event and read as Bob. Previously shared history stays
+   readable; future events use a new group key. Readmission grants that group's history.
 
-Root URLs map to the suite route. Explicit paths, query strings, and hashes carry across to the main host; the router then applies its usual legacy-hash handling. Other hosts, including localhost and preview hosts, are untouched.
+The three demo identities and staged work stay in memory. This is a single-tab host
+simulating several readers, not isolation between real user sessions. Reload clears
+the keys and current work. Exports contain committed history and no identity secrets;
+keep the tab open to decrypt re-imported files. Files must be no larger than 2 MiB.
+Invalid and unknown-model documents stay inspectable without providing trusted notes
+or loading executable code. One previous document is kept in memory for Restore.
 
-This is a JavaScript redirect using `location.replace`, so Back does not revisit the subdomain entry. The mappings live in [navigation.ts](src/routes/home/navigation.ts); the redirect runs in [index.html](index.html) before the app bundle loads. Direct section links and saved refresh positions are set before the page becomes visible. Fade-in effects change opacity without moving the text. DNS and Worker routing are configured separately.
+Readable replay reports its limited coverage. Locked events never get invented titles
+or contents, and their count is not a count of distinct notes. Integrity, replay,
+freshness and other recipients' decryptability are reported separately.
 
-## Editing the site
+The new playground uses Ledger's common container. Earlier `concord-ledger` demo
+exports are not converted or replayed as trusted documents; their raw input remains
+inspectable. This is the same accepted alpha container break as the core libraries.
 
-| Area | Files |
-| --- | --- |
-| Story copy and sections | [RouteHome.vue](src/routes/home/RouteHome.vue) |
-| Architecture diagram | [ArchitectureMap.vue](src/routes/home/ArchitectureMap.vue) |
-| Header, footer, and section tracking | [App.vue](src/App.vue) |
-| Route paths and subdomain mappings | [navigation.ts](src/routes/home/navigation.ts) |
-| Playground interface and runtime | [src/modules/playground](src/modules/playground) |
-| Identity demo | [src/modules/demo-identity](src/modules/demo-identity) and [its routes](src/routes/demo/identity) |
-| Layout and motion styles | [story.css](src/story.css) |
-| App metadata and base theme | [app.generated.ts](src/app/config/app.generated.ts) and [theme.generated.ts](src/app/config/theme.generated.ts) |
-| Building-block themes | [suite-themes.ts](src/app/config/suite-themes.ts) |
-| Page titles, descriptions, and canonical URLs | [page-seo.ts](src/app/config/page-seo.ts) |
-| Static generation, PWA, and build configuration | [vite.config.ts](vite.config.ts) |
+## Local identity demo
 
-Story copy is authored in Vue components. [app.yaml](app.yaml) includes template landing content that does not drive the story page; this package has no manifest-sync or scaffolding command.
+The separate identity demo keeps an encrypted identity in browser local storage.
+Identity supplies mnemonic recovery and key derivation; Armour supplies age-compatible
+passphrase encryption. Explicit unlock is used in both development and production.
+Existing envelopes with the earlier `rage` metadata label remain readable; new
+writes use `age`. No identity material is sent to a server.
 
-## Checks
+## Editing the website
 
-```sh
-pnpm test:unit
-pnpm test:runtime
-pnpm build
-```
-
-Unit tests cover routing, subdomain mappings, page metadata, themes, and components. Runtime tests exercise encrypted history replay, tamper detection, and access with an unrelated identity. Use `pnpm test:unit:watch` while developing.
-
-Playwright specs and `pnpm test:e2e` are also present. For manual browser verification, check the story links and scroll tracking, playground replay and inspectors, identity create/recover/login modes, light and dark themes, mobile navigation, and reduced-motion behavior. Subdomain redirects need a host serving the app under the relevant subdomain.
+| Area                                | Files                                                           |
+| ----------------------------------- | --------------------------------------------------------------- |
+| Landing copy and sections           | `src/routes/home/RouteHome.vue`                                 |
+| Architecture diagram                | `src/routes/home/ArchitectureMap.vue`                           |
+| Header, footer and section tracking | `src/App.vue`                                                   |
+| Route paths and subdomain mappings  | `src/routes/home/navigation.ts`                                 |
+| Playground                          | `src/modules/playground`, `src/routes/home/RoutePlayground.vue` |
+| Local identity                      | `src/modules/demo-identity`, `src/routes/demo/identity`         |
+| Site palettes and styles            | `src/themes.css`, `src/style.css`, `src/story.css`              |
+| App metadata and package pins       | `src/app/config/app.config.ts`, `src/app/config/packages.ts`    |
+| Titles and canonical URLs           | `src/app/config/page-seo.ts`                                    |
+| Static build and PWA                | `vite.config.ts`, `scripts/verify-dist.mjs`                     |
 
 ## Hosting
 
-Publish the contents of `dist/` to a static host. [vercel.json](vercel.json) configures clean URLs, an app fallback, security headers, and service-worker revalidation for Vercel. Other hosts need equivalent route handling for direct links.
+Publish `dist/` to the static host. `vercel.json` retains clean URLs, application
+fallbacks, security headers and service-worker revalidation. Other hosts need
+equivalent route handling. Publishing the live site is a separate review action.
 
-The production service worker precaches site assets and generated pages and checks for updates automatically. Offline behavior depends on the assets already cached by the browser.
+The suite subdomains (`identity`, `armour`, `seal`, `ledger`, `concord`) replace their
+root URLs with the matching route on `https://ternent.dev`. Explicit paths, queries
+and hashes carry across; localhost and preview hosts are untouched. This redirect
+runs before rendering. Initial navigation preserves direct section links and saved
+scroll positions without a visible jump.
+
+The production service worker precaches site assets and generated pages and checks
+for updates. Offline availability depends on the browser's existing cache.

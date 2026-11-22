@@ -25,44 +25,84 @@ const define = (dependencies, factory) => {
   for (const dependency of dependencies) localFile(`${dependency}.js`);
   factory({
     clientsClaim() {},
-    precacheAndRoute(entries) { precache = entries; throw captured; },
+    precacheAndRoute(entries) {
+      precache = entries;
+      throw captured;
+    },
   });
 };
 try {
   runInNewContext(readFileSync(localFile("/sw.js"), "utf8"), {
-    self: { define, skipWaiting() {} }, define,
+    self: { define, skipWaiting() {} },
+    define,
   });
 } catch (error) {
   if (error !== captured) throw error;
 }
 assert.ok(precache?.length, "Service worker must declare its precache");
 for (const entry of precache) localFile(typeof entry === "string" ? entry : entry.url);
-for (const file of readdirSync(root, { recursive: true }).filter((file) => file.endsWith(".html") && file !== "offline.html")) {
+for (const file of readdirSync(root, { recursive: true }).filter(
+  (file) => file.endsWith(".html") && file !== "offline.html",
+)) {
   const html = readFileSync(resolve(root, file), "utf8");
   const links = html.match(/<link\b[^>]*rel=["']manifest["'][^>]*>/g) ?? [];
   assert.equal(links.length, 1, `${file} must have one manifest link`);
-  assert.ok(!/__APP_(STORY|SUBDOMAIN)_PATHS__/.test(html), `${file} has unresolved navigation config`);
+  assert.ok(
+    !/__APP_(STORY|SUBDOMAIN)_PATHS__/.test(html),
+    `${file} has unresolved navigation config`,
+  );
   const redirect = html.match(/<script\b[^>]*data-subdomain-redirect[^>]*>([\s\S]*?)<\/script>/);
   const position = html.match(/<script\b[^>]*data-initial-position[^>]*>([\s\S]*?)<\/script>/);
   assert.ok(redirect && position, `${file} must include both initial navigation scripts`);
-  assert.ok(redirect.index < html.indexOf("<body"), `${file} must redirect before rendering content`);
-  assert.ok(position.index > html.indexOf("</main>"), `${file} must position after rendering page content`);
+  assert.ok(
+    redirect.index < html.indexOf("<body"),
+    `${file} must redirect before rendering content`,
+  );
+  assert.ok(
+    position.index > html.indexOf("</main>"),
+    `${file} must position after rendering page content`,
+  );
   for (const match of [redirect, position]) {
-    assert.ok(!/\b(?:async|defer|type=)/.test(match[0].split(">")[0]), `${file} must position before deferred app scripts`);
+    assert.ok(
+      !/\b(?:async|defer|type=)/.test(match[0].split(">")[0]),
+      `${file} must position before deferred app scripts`,
+    );
   }
   let redirectedTo;
   runInNewContext(redirect[1], {
     URL,
-    window: { location: { href: "https://concord.ternent.dev/", replace(url) { redirectedTo = url; } } },
+    window: {
+      location: {
+        href: "https://concord.ternent.dev/",
+        replace(url) {
+          redirectedTo = url;
+        },
+      },
+    },
   });
-  assert.equal(redirectedTo, `${origin}/concord`, `${file} must redirect suite hosts without the app bundle`);
+  assert.equal(
+    redirectedTo,
+    `${origin}/concord`,
+    `${file} must redirect suite hosts without the app bundle`,
+  );
   const calls = [];
   runInNewContext(position[1], {
     window: {
-      location: { pathname: "/concord" }, history: { state: { scroll: { left: 0, top: 640 } } },
-      scrollTo(value) { calls.push(value); },
+      location: { pathname: "/concord" },
+      history: { state: { scroll: { left: 0, top: 640 } } },
+      scrollTo(value) {
+        calls.push(value);
+      },
     },
-    document: { documentElement: { style: { removeProperty(value) { calls.push(value); } } } },
+    document: {
+      documentElement: {
+        style: {
+          removeProperty(value) {
+            calls.push(value);
+          },
+        },
+      },
+    },
   });
   assert.equal(calls[0]?.top, 640, `${file} must restore the saved position`);
   assert.equal(calls[0]?.behavior, "instant", `${file} must position without animating`);

@@ -1,7 +1,3 @@
-# LLM Context - Home Route
+# Home route context
 
-Expected content:
-
-- Template intro.
-- Quick links into settings and identity flows.
-- Identity status summary via shared identity component.
+RouteHome is the project landing page, not a generated app template. Story sections share one component. The playground uses its own route component and preserves its session between inspector routes. The accepted five public packages are Identity, Armour, Ledger, Concord and Seal.

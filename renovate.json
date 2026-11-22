@@ -1,0 +1,38 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:recommended", ":pinAllExceptPeerDependencies"],
+  "automerge": false,
+  "packageRules": [
+    {
+      "matchPackageNames": [
+        "@ternent/identity",
+        "@ternent/armour",
+        "@ternent/ledger",
+        "@ternent/concord",
+        "@ternent/seal"
+      ],
+      "groupName": "Ternent published libraries",
+      "followTag": "next",
+      "rangeStrategy": "pin"
+    },
+    {
+      "matchPackageNames": [
+        "vite-plus",
+        "@voidzero-dev/vite-plus-core",
+        "vitest",
+        "@vitest/**",
+        "vue",
+        "vue-router",
+        "vue-tsc",
+        "@vitejs/plugin-vue",
+        "@typescript/typescript6",
+        "vite-ssg",
+        "vite-plugin-pwa",
+        "@tailwindcss/vite",
+        "tailwindcss",
+        "@vueuse/core"
+      ],
+      "groupName": "Vue and Vite toolchain"
+    }
+  ]
+}

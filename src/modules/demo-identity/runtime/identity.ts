@@ -6,7 +6,7 @@ import {
   type MnemonicWordCount,
   type SerializedIdentity,
 } from "@ternent/identity";
-import { decryptTextWithPassphrase, encryptTextWithPassphrase, initArmour } from "@ternent/armour";
+import { decryptTextWithPassphrase, encryptTextWithPassphrase } from "@ternent/armour";
 import type { LocalStorageLike } from "./storage";
 import { createOtpAuthUri, generateTotpSecret, verifyTotpCode, type TotpPolicy } from "./totp";
 
@@ -38,7 +38,7 @@ export type EncryptedIdentityBlobV2 = {
   encryption: {
     scheme: "armour-passphrase";
     encoding: "armor";
-    algorithm: "rage";
+    algorithm: "age" | "rage";
   };
   unlockPolicy: {
     password: true;
@@ -227,7 +227,7 @@ function isEncryptedIdentityBlobV2(value: unknown): value is EncryptedIdentityBl
     isRecord(value.encryption) &&
     value.encryption.scheme === "armour-passphrase" &&
     value.encryption.encoding === "armor" &&
-    value.encryption.algorithm === "rage" &&
+    (value.encryption.algorithm === "age" || value.encryption.algorithm === "rage") &&
     isRecord(value.unlockPolicy) &&
     value.unlockPolicy.password === true &&
     typeof value.unlockPolicy.totp === "boolean"
@@ -267,7 +267,6 @@ async function encryptPayload(input: {
   if (typeof serialized !== "string" || serialized.length === 0) {
     throw new Error(`Encrypted identity payload serialization failed (type=${typeof serialized}).`);
   }
-  await initArmour();
   return await encryptTextWithPassphrase({
     passphrase: input.password,
     text: serialized,
@@ -278,7 +277,6 @@ async function decryptPayload(input: {
   blob: EncryptedIdentityBlobV2;
   password: string;
 }): Promise<EncryptedIdentityPayload> {
-  await initArmour();
   const plaintext = await decryptTextWithPassphrase({
     passphrase: input.password,
     data: input.blob.ciphertext,
@@ -306,7 +304,7 @@ function createEnvelope(input: {
     encryption: {
       scheme: "armour-passphrase",
       encoding: "armor",
-      algorithm: "rage",
+      algorithm: "age",
     },
     unlockPolicy: {
       password: true,

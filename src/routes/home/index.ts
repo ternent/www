@@ -5,12 +5,14 @@ import { sectionPaths } from "./navigation";
 const component = () => import("./RouteHome.vue");
 const playground = () => import("./RoutePlayground.vue");
 const homeRoutes: RouteModule = [
-  ...Object.entries(sectionPaths).filter(([section]) => section !== "playground").map(([section, path]) => ({
-    path,
-    name: section === "overview" ? "home" : `story-${section}`,
-    component,
-    meta: { storySection: section },
-  })),
+  ...Object.entries(sectionPaths)
+    .filter(([section]) => section !== "playground")
+    .map(([section, path]) => ({
+      path,
+      name: section === "overview" ? "home" : `story-${section}`,
+      component,
+      meta: { storySection: section },
+    })),
   { path: "/playground", name: "playground", component: playground },
   ...["history", "json", "verification"].map((view) => ({
     path: `/playground/${view}`,

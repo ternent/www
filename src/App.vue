@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { onMounted, onBeforeUnmount, nextTick, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
-import { Logo } from "@ternent/ui/patterns";
+import Logo from "@/components/BrandLogo.vue";
 import {
   sectionPaths,
   isStorySection,
@@ -21,27 +21,36 @@ const sections = [
   ["open-source", "Open source"],
 ] as const;
 const footerGroups = [
-  { title: "Explore", links: [
-    { label: "Overview", to: "/" },
-    { label: "The idea", to: "/idea" },
-    { label: "Architecture", to: "/architecture" },
-    { label: "Open source", to: "/open-source" },
-    { label: "Work together", to: "/about" },
-  ] },
-  { title: "Building blocks", links: [
-    { label: "Identity", to: "/identity" },
-    { label: "Armour", to: "/armour" },
-    { label: "Seal", to: "/seal" },
-    { label: "Ledger", to: "/ledger" },
-    { label: "Concord", to: "/concord" },
-  ] },
-  { title: "Examples", links: [
-    { label: "Rebuild from history", to: "/playground" },
-    { label: "Encrypted data", to: "/playground/json" },
-    { label: "Commit history", to: "/playground/history" },
-    { label: "Verification", to: "/playground/verification" },
-    { label: "Local identity", to: "/demo/identity" },
-  ] },
+  {
+    title: "Explore",
+    links: [
+      { label: "Overview", to: "/" },
+      { label: "The idea", to: "/idea" },
+      { label: "Architecture", to: "/architecture" },
+      { label: "Open source", to: "/open-source" },
+      { label: "Work together", to: "/about" },
+    ],
+  },
+  {
+    title: "Building blocks",
+    links: [
+      { label: "Identity", to: "/identity" },
+      { label: "Armour", to: "/armour" },
+      { label: "Seal", to: "/seal" },
+      { label: "Ledger", to: "/ledger" },
+      { label: "Concord", to: "/concord" },
+    ],
+  },
+  {
+    title: "Examples",
+    links: [
+      { label: "Rebuild from history", to: "/playground" },
+      { label: "Encrypted data", to: "/playground/json" },
+      { label: "Commit history", to: "/playground/history" },
+      { label: "Verification", to: "/playground/verification" },
+      { label: "Local identity", to: "/demo/identity" },
+    ],
+  },
 ] as const;
 const architectureSections = new Set([
   "how-it-works",
@@ -110,9 +119,13 @@ onMounted(() => {
     await nextTick();
     refreshSections();
     if (scrolling || !from.matched.length) return;
-    const section = typeof to.meta.storySection === "string"
-      ? document.getElementById(to.meta.storySection) : null;
-    const heading = (section ?? document.querySelector("main"))?.querySelector<HTMLElement>("h1, h2");
+    const section =
+      typeof to.meta.storySection === "string"
+        ? document.getElementById(to.meta.storySection)
+        : null;
+    const heading = (section ?? document.querySelector("main"))?.querySelector<HTMLElement>(
+      "h1, h2",
+    );
     if (heading) {
       heading.setAttribute("tabindex", "-1");
       heading.focus({ preventScroll: true });

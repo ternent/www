@@ -58,7 +58,7 @@ function getErrorMessage(error: unknown): string {
 function getIdentityService(): IdentityService {
   if (!service) {
     service = createIdentityService({
-      devSessionUnlockBypass: import.meta.env.DEV,
+      devSessionUnlockBypass: false,
       rpName: "ternent.dev",
     });
   }

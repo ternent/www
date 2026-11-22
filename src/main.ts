@@ -6,9 +6,7 @@ import { consumeSectionScroll, legacySectionPath } from "./routes/home/navigatio
 import registerSW from "./utils/registerSW";
 import { pageSeo } from "./app/config/page-seo";
 
-import "@ternent/ui/styles.css";
-import "@/app/config/theme.generated";
-import "@/app/config/suite-themes";
+import "./themes.css";
 import "./style.css";
 import "./story.css";
 

@@ -8,15 +8,20 @@ import { subdomainPaths } from "@/routes/home/navigation";
 const template = readFileSync("index.html", "utf8");
 
 function subdomainDestination(href: string): string | undefined {
-  const script = template.match(/<script[^>]*data-subdomain-redirect[^>]*>([\s\S]*?)<\/script>/)?.[1];
+  const script = template.match(
+    /<script[^>]*data-subdomain-redirect[^>]*>([\s\S]*?)<\/script>/,
+  )?.[1];
   expect(script).toBeDefined();
   const replace = vi.fn();
-  runInNewContext(script!
-    .replaceAll("__APP_SUBDOMAIN_PATHS__", JSON.stringify(subdomainPaths))
-    .replaceAll("__APP_STORY_PATHS__", "{}"), {
-    URL,
-    window: { location: { href, replace }, history: { state: null } },
-  });
+  runInNewContext(
+    script!
+      .replaceAll("__APP_SUBDOMAIN_PATHS__", JSON.stringify(subdomainPaths))
+      .replaceAll("__APP_STORY_PATHS__", "{}"),
+    {
+      URL,
+      window: { location: { href, replace }, history: { state: null } },
+    },
+  );
   return replace.mock.calls[0]?.[0];
 }
 
@@ -40,15 +45,18 @@ describe("suite subdomains", () => {
   });
 
   it("preserves query strings and hashes", () => {
-    expect(subdomainDestination("https://ledger.ternent.dev/?source=launch#history"))
-      .toBe("https://ternent.dev/ledger?source=launch#history");
+    expect(subdomainDestination("https://ledger.ternent.dev/?source=launch#history")).toBe(
+      "https://ternent.dev/ledger?source=launch#history",
+    );
   });
 
   it("preserves explicit paths instead of overriding shared links", () => {
-    expect(subdomainDestination("https://seal.ternent.dev/playground/verification?example=1#proof"))
-      .toBe("https://ternent.dev/playground/verification?example=1#proof");
-    expect(subdomainDestination("https://ledger.ternent.dev/ledger"))
-      .toBe("https://ternent.dev/ledger");
+    expect(
+      subdomainDestination("https://seal.ternent.dev/playground/verification?example=1#proof"),
+    ).toBe("https://ternent.dev/playground/verification?example=1#proof");
+    expect(subdomainDestination("https://ledger.ternent.dev/ledger")).toBe(
+      "https://ternent.dev/ledger",
+    );
   });
 
   it.each([
@@ -64,7 +72,8 @@ describe("suite subdomains", () => {
   });
 
   it("keeps the destination host fixed even with a double slash in the path", () => {
-    expect(subdomainDestination("https://ledger.ternent.dev//example.com/path"))
-      .toBe("https://ternent.dev//example.com/path");
+    expect(subdomainDestination("https://ledger.ternent.dev//example.com/path")).toBe(
+      "https://ternent.dev//example.com/path",
+    );
   });
 });

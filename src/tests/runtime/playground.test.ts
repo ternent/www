@@ -1,86 +1,203 @@
-import { test, expect } from "vitest";
-import {
-  createSample, openRuntime, getData, verifyArtifact, orderedCommits,
-  alterPayload, stateFingerprint, type DataState,
-} from "../../modules/playground/runtime";
+import { expect, test } from "vite-plus/test";
+import { verifyLedger } from "@ternent/ledger";
+import { createDocument } from "@ternent/concord";
+import { createStandardSystemProfile } from "@ternent/concord/system";
+import { generateIdentity } from "@ternent/armour";
+import { notesModel } from "../../modules/playground/model";
+import { Playground, value } from "../../modules/playground/session";
 
-test("a fresh runtime reconstructs state from encrypted history and reports real intermediate changes", async () => {
-  const original = await createSample();
-  const artifact = await original.app.exportLedger();
-  const identity = original.identity;
-  const expected = getData(original);
-  const fingerprint = await stateFingerprint(expected);
-  expect(expected).toEqual({ project: "Orbit", version: 2, settings: { visibility: "private", region: "eu" } });
-  expect(orderedCommits(artifact).map(commit => commit.metadata?.message || "Genesis")).toEqual([
-    "Genesis", "Initialise document", "Set preferences", "Rename project", "Publish revision",
-  ]);
-  expect(Object.keys(artifact.entries)).toHaveLength(5);
-  expect(Object.values(artifact.entries).every(entry => entry.payload.type === "encrypted")).toBe(true);
-  expect(JSON.stringify(artifact)).not.toContain("Northstar");
-  expect(JSON.stringify(artifact)).not.toContain("Orbit");
-  expect(JSON.stringify(artifact)).not.toContain(identity.material.seed);
-
-  await original.app.destroy();
-  expect(getData(original)).toEqual({});
-  // Verification receives no original identity, and has no decryptor.
-  expect((await verifyArtifact(artifact)).valid).toBe(true);
-
-  const trace: DataState[] = [];
-  const replayedIds: string[] = [];
-  const rebuilt = await openRuntime(identity, artifact, (state, entry) => {
-    trace.push(state);
-    replayedIds.push(entry.entryId);
+test("different readers get actual readable projections over the same signed bytes", async () => {
+  const app = await Playground.create();
+  const bytes = app.export();
+  expect(JSON.parse(new TextDecoder().decode(bytes)).format).toBe("ledger");
+  expect((await verifyLedger(bytes)).integrity).toBe("valid");
+  expect(app.handle.state()).toMatchObject({
+    status: "ready",
+    coverage: "complete",
+    projection: { notes: expect.any(Array) },
   });
-  try {
-    expect(trace).toHaveLength(5);
-    expect(trace[0]).toEqual({ project: "Northstar" });
-    expect(trace[1].version).toBe(1);
-    expect(trace[3].project).toBe("Orbit");
-    expect(trace[4].version).toBe(2);
-    expect(getData(rebuilt)).toEqual(expected);
-    expect(await stateFingerprint(getData(rebuilt))).toBe(fingerprint);
-    expect(replayedIds).toEqual(orderedCommits(artifact).flatMap(commit => commit.entryIds));
-    expect(await rebuilt.app.exportLedger()).toEqual(artifact);
-  } finally {
-    await rebuilt.app.destroy();
+  expect(app.handle.state().status === "ready" && app.handle.state()).toHaveProperty(
+    "projection.notes.length",
+    3,
+  );
+  for (const [reader, readable, locked] of [
+    ["bob", 2, 1],
+    ["eve", 0, 3],
+    ["none", 0, 3],
+  ] as const) {
+    await app.switchReader(reader);
+    expect(app.export()).toEqual(bytes);
+    expect(app.handle.state()).toMatchObject({
+      status: "ready",
+      coverage: "readable",
+      lockedEntries: locked,
+      projection: { notes: expect.any(Array) },
+    });
+    const state = app.handle.state();
+    if (state.status === "ready") expect(state.projection.notes).toHaveLength(readable);
+    expect((await app.handle.verify()).integrity).toBe("valid");
   }
-}, 30000);
+});
 
-test("one changed ciphertext byte fails public verification and never reaches a replay plugin", async () => {
-  const runtime = await createSample();
-  try {
-    const artifact = await runtime.app.exportLedger();
-    const alteration = alterPayload(artifact);
-    const original = artifact.entries[alteration.entryId].payload.data as string;
-    const changed = alteration.container.entries[alteration.entryId].payload.data as string;
-    expect(original).toHaveLength(changed.length);
-    expect([...original].filter((char, index) => char !== changed[index])).toHaveLength(1);
-    expect((await verifyArtifact(artifact)).valid).toBe(true);
-    const rejected = await verifyArtifact(alteration.container);
-    expect(rejected.valid).toBe(false);
-    expect(rejected.payloadHashesValid).toBe(false);
-    let applied = 0;
-    await expect(openRuntime(runtime.identity, alteration.container, () => { applied += 1; }))
-      .rejects.toThrow();
-    expect(applied).toBe(0);
-    expect(getData(runtime).project).toBe("Orbit");
-  } finally {
-    await runtime.app.destroy();
-  }
-}, 30000);
+test("a shared writer cannot author into Alice's independent group", async () => {
+  const app = await Playground.create();
+  await app.switchReader("bob");
+  await app.put({
+    id: "bob",
+    audience: "document",
+    title: "From Bob",
+    body: "A real signed commit.",
+  });
+  const before = app.export();
+  await expect(
+    app.put({ id: "private", audience: app.privateAudience, title: "Overwrite", body: "No." }),
+  ).rejects.toThrow("CAPABILITY_DENIED");
+  expect(app.export()).toEqual(before);
+  expect(app.canWrite(app.privateAudience)).toBe(false);
+});
 
-test("an unrelated identity cannot reconstruct the encrypted state", async () => {
-  const runtime = await createSample();
-  const stranger = await openRuntime();
-  let reopened: Awaited<ReturnType<typeof openRuntime>> | undefined;
-  try {
-    const artifact = await runtime.app.exportLedger();
-    try { reopened = await openRuntime(stranger.identity, artifact); } catch { /* Decryption may reject. */ }
-    if (reopened) expect(getData(reopened)).toEqual({});
-    expect((await verifyArtifact(artifact)).valid).toBe(true);
-  } finally {
-    await reopened?.app.destroy();
-    await stranger.app.destroy();
-    await runtime.app.destroy();
+test("switching readers publishes the selected identity and replayed state atomically", async () => {
+  const app = await Playground.create();
+  const previousHandle = app.handle;
+  const switching = app.switchReader("bob");
+  expect(app.reader).toBe("alice");
+  expect(app.handle).toBe(previousHandle);
+  await switching;
+  expect(app.reader).toBe("bob");
+  const state = app.handle.state();
+  expect(state.status).toBe("ready");
+  if (state.status === "ready") expect(state.projection.notes).toHaveLength(2);
+});
+
+test("a note ID in another group cannot overwrite private application state", async () => {
+  const app = await Playground.create();
+  await app.switchReader("bob");
+  await app.put({
+    id: "private",
+    audience: "document",
+    title: "Same ID, different group",
+    body: "Separate entry.",
+  });
+  await app.switchReader("alice");
+  const state = app.handle.state();
+  expect(state.status).toBe("ready");
+  if (state.status === "ready")
+    expect(state.projection.notes.filter((note) => note.id === "private")).toHaveLength(2);
+});
+
+test("drafts change only preview; switching readers cannot silently discard them", async () => {
+  const app = await Playground.create();
+  await app.setMode("draft");
+  const before = app.export();
+  await app.put({
+    id: "draft",
+    audience: "document",
+    title: "Uncommitted",
+    body: "Only in memory.",
+  });
+  expect(app.export()).toEqual(before);
+  expect(app.handle.draft()?.preview.notes).toHaveLength(4);
+  await expect(app.switchReader("bob")).rejects.toThrow("Commit or discard");
+  expect(app.reader).toBe("alice");
+  await app.commit();
+  expect(app.handle.draft()).toBeNull();
+  expect(app.export()).not.toEqual(before);
+  await app.put({ id: "discard", audience: "document", title: "Throw away", body: "Not saved." });
+  const committed = app.export();
+  await app.discard();
+  expect(app.export()).toEqual(committed);
+});
+
+test("removal preserves shared history, rotates future protection and readmission restores access", async () => {
+  const app = await Playground.create();
+  await app.setBobAccess("document", false);
+  await app.put({
+    id: "after",
+    audience: "document",
+    title: "After removal",
+    body: "Future protected event.",
+  });
+  await app.switchReader("bob");
+  expect(app.canWrite("document")).toBe(false);
+  const state = app.handle.state();
+  expect(state.status).toBe("ready");
+  if (state.status === "ready") {
+    expect(state.projection.notes).toHaveLength(2);
+    expect(state.projection.notes.some((note) => note.id === "after")).toBe(false);
+    expect(state.lockedEntries).toBe(2);
   }
-}, 30000);
+  await app.switchReader("alice");
+  await app.setBobAccess("document", true);
+  await app.switchReader("bob");
+  const admitted = app.handle.state();
+  if (admitted.status === "ready")
+    expect(admitted.projection.notes.some((note) => note.id === "after")).toBe(true);
+});
+
+test("signature tampering removes trusted state; restoring returns identical verified bytes", async () => {
+  const app = await Playground.create();
+  const before = app.export();
+  await app.tamper();
+  expect(app.handle.state()).toEqual({ status: "inspection", reason: "invalid" });
+  expect((await app.handle.verify()).integrity).toBe("invalid");
+  expect(app.canWrite("document")).toBe(false);
+  await app.restore();
+  expect(app.export()).toEqual(before);
+  expect((await app.handle.verify()).integrity).toBe("valid");
+});
+
+test("file round trips preserve signatures and ciphertext; exports contain no private note plaintext", async () => {
+  const app = await Playground.create();
+  const before = app.export();
+  expect(app.json).not.toContain("The quiet notebook");
+  expect(app.json).not.toContain("A little space for Alice");
+  await app.switchReader("bob");
+  await app.load(before);
+  expect(app.export()).toEqual(before);
+  expect((await app.handle.verify()).integrity).toBe("valid");
+});
+
+test("malformed and oversized imports never replace trusted state silently", async () => {
+  const app = await Playground.create();
+  const before = app.export();
+  await expect(app.load(new Uint8Array(2 * 1024 * 1024 + 1))).rejects.toThrow("2 MiB");
+  expect(app.export()).toEqual(before);
+  await app.applyJson("not JSON");
+  expect(app.handle.state().status).toBe("inspection");
+  expect(app.json).toBe("not JSON");
+  await app.restore();
+  expect(app.export()).toEqual(before);
+});
+
+test("a valid foreign model stays inspectable without being treated as tampered or trusted notes", async () => {
+  const app = await Playground.create();
+  const foreign = value(
+    await createDocument({
+      identity: value(await generateIdentity()),
+      model: { ...notesModel, ref: { id: "another.application", version: 1 } },
+      system: createStandardSystemProfile(),
+    }),
+  );
+  await app.load(foreign.export());
+  expect((await app.handle.verify()).integrity).toBe("valid");
+  expect(app.handle.state()).toEqual({ status: "inspection", reason: "incompatible" });
+  expect(app.canWrite("document")).toBe(false);
+});
+
+test("the retired Concord container stays inspectable without being converted into trusted notes", async () => {
+  const app = await Playground.create();
+  const bytes = new TextEncoder().encode(
+    JSON.stringify({
+      format: "concord-ledger",
+      version: "1",
+      head: null,
+      commits: {},
+      entries: {},
+    }),
+  );
+  await app.load(bytes);
+  expect(app.handle.state().status).toBe("inspection");
+  expect((await app.handle.verify()).integrity).not.toBe("valid");
+  expect(app.canWrite("document")).toBe(false);
+  expect(app.export()).toEqual(bytes);
+});

@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { sectionPaths, subdomainPaths } from "@/routes/home/navigation";
 
 const template = readFileSync("index.html", "utf8");
-const storyPaths = Object.fromEntries(Object.entries(sectionPaths).filter(([section]) => section !== "playground").map(([section, path]) => [path, section]));
+const storyPaths = Object.fromEntries(
+  Object.entries(sectionPaths)
+    .filter(([section]) => section !== "playground")
+    .map(([section, path]) => [path, section]),
+);
 
 function inlineScript(marker: string) {
   const match = template.match(new RegExp(`<script[^>]*data-${marker}[^>]*>([\\s\\S]*?)</script>`));
@@ -19,29 +23,42 @@ describe("initial navigation before the app bundle", () => {
   it("redirects suite hosts in the head before any page content", () => {
     const replace = vi.fn();
     runInNewContext(inlineScript("subdomain-redirect"), {
-      URL, window: { location: { href: "https://concord.ternent.dev/?source=test", replace } },
+      URL,
+      window: { location: { href: "https://concord.ternent.dev/?source=test", replace } },
     });
     expect(replace).toHaveBeenCalledWith("https://ternent.dev/concord?source=test");
     expect(template.indexOf("data-subdomain-redirect")).toBeLessThan(template.indexOf("<body>"));
   });
 
-  it.each(["/concord", "/ledger", "/identity", "/armour", "/seal"])("positions %s as soon as the static markup is parsed", (pathname) => {
-    const scrollTo = vi.fn();
-    const getElementById = vi.fn(() => ({ getBoundingClientRect: () => ({ top: 2300 }) }));
-    runInNewContext(inlineScript("initial-position"), {
-      window: { location: { pathname }, scrollY: 0, scrollTo, history: { state: null } },
-      document: { getElementById, documentElement },
-    });
-    expect(getElementById).toHaveBeenCalledWith(storyPaths[pathname]);
-    expect(scrollTo).toHaveBeenCalledWith({ left: 0, top: 2200, behavior: "instant" });
-    expect(template.indexOf("data-initial-position")).toBeGreaterThan(template.indexOf('<div id="app">'));
-    expect(template.indexOf("data-initial-position")).toBeLessThan(template.indexOf('src="/src/main.ts"'));
-  });
+  it.each(["/concord", "/ledger", "/identity", "/armour", "/seal"])(
+    "positions %s as soon as the static markup is parsed",
+    (pathname) => {
+      const scrollTo = vi.fn();
+      const getElementById = vi.fn(() => ({ getBoundingClientRect: () => ({ top: 2300 }) }));
+      runInNewContext(inlineScript("initial-position"), {
+        window: { location: { pathname }, scrollY: 0, scrollTo, history: { state: null } },
+        document: { getElementById, documentElement },
+      });
+      expect(getElementById).toHaveBeenCalledWith(storyPaths[pathname]);
+      expect(scrollTo).toHaveBeenCalledWith({ left: 0, top: 2200, behavior: "instant" });
+      expect(template.indexOf("data-initial-position")).toBeGreaterThan(
+        template.indexOf('<div id="app">'),
+      );
+      expect(template.indexOf("data-initial-position")).toBeLessThan(
+        template.indexOf('src="/src/main.ts"'),
+      );
+    },
+  );
 
   it("restores the saved refresh position instead of jumping to the section start", () => {
     const scrollTo = vi.fn();
     runInNewContext(inlineScript("initial-position"), {
-      window: { location: { pathname: "/concord" }, scrollY: 0, scrollTo, history: { state: { scroll: { left: 0, top: 2510 } } } },
+      window: {
+        location: { pathname: "/concord" },
+        scrollY: 0,
+        scrollTo,
+        history: { state: { scroll: { left: 0, top: 2510 } } },
+      },
       document: { getElementById: vi.fn(), documentElement },
     });
     expect(scrollTo).toHaveBeenCalledWith({ left: 0, top: 2510, behavior: "instant" });
@@ -50,7 +67,12 @@ describe("initial navigation before the app bundle", () => {
   it("leaves non-story pages to their own navigation", () => {
     const scrollTo = vi.fn();
     runInNewContext(inlineScript("initial-position"), {
-      window: { location: { pathname: "/playground/history" }, scrollY: 0, scrollTo, history: { state: null } },
+      window: {
+        location: { pathname: "/playground/history" },
+        scrollY: 0,
+        scrollTo,
+        history: { state: null },
+      },
       document: { getElementById: vi.fn(), documentElement },
     });
     expect(scrollTo).not.toHaveBeenCalled();
@@ -66,11 +88,21 @@ describe("initial navigation before the app bundle", () => {
     expect(style.visibility).toBe("hidden");
     const scrollTo = vi.fn();
     runInNewContext(inlineScript("initial-position"), {
-      window: { location: { pathname: "/concord" }, history: { state: null }, scrollY: 0, scrollTo },
-      document: { documentElement: { style }, getElementById: () => ({ getBoundingClientRect: () => ({ top: 2300 }) }) },
+      window: {
+        location: { pathname: "/concord" },
+        history: { state: null },
+        scrollY: 0,
+        scrollTo,
+      },
+      document: {
+        documentElement: { style },
+        getElementById: () => ({ getBoundingClientRect: () => ({ top: 2300 }) }),
+      },
     });
     expect(scrollTo).toHaveBeenCalled();
     expect(style.removeProperty).toHaveBeenCalledWith("visibility");
-    expect(scrollTo.mock.invocationCallOrder[0]).toBeLessThan(style.removeProperty.mock.invocationCallOrder[0]);
+    expect(scrollTo.mock.invocationCallOrder[0]).toBeLessThan(
+      style.removeProperty.mock.invocationCallOrder[0],
+    );
   });
 });
