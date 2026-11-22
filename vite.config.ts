@@ -4,6 +4,12 @@ import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
 import { appConfig, appSeoConfig } from "./src/app/config/app.generated";
+import { sectionPaths, subdomainPaths } from "./src/routes/home/navigation";
+
+const storyPaths = Object.fromEntries(
+  Object.entries(sectionPaths).filter(([section]) => section !== "playground")
+    .map(([section, path]) => [path, section]),
+);
 
 const appThemeData = `${appConfig.themeName}-${appConfig.defaultThemeMode}`;
 const themeStorageKey = `${appConfig.appId}/theme-mode`;
@@ -25,6 +31,8 @@ function createIndexHtmlTransformPlugin() {
         .replaceAll("__APP_DESCRIPTION__", appSeoConfig.description)
         .replaceAll("__APP_THEME_COLOR__", appSeoConfig.themeColor)
         .replaceAll("__APP_THEME_DATA__", appThemeData)
+        .replaceAll("__APP_STORY_PATHS__", JSON.stringify(storyPaths))
+        .replaceAll("__APP_SUBDOMAIN_PATHS__", JSON.stringify(subdomainPaths))
         .replaceAll("__APP_THEME_BOOTSTRAP__", themeBootstrapScript);
     },
   };

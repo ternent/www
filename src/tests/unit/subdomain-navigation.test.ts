@@ -1,7 +1,24 @@
-import { describe, expect, it } from "vitest";
+import { readFileSync } from "node:fs";
+import { runInNewContext } from "node:vm";
+import { describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter } from "vue-router";
 import { routes } from "@/routes";
-import { subdomainDestination } from "@/routes/home/navigation";
+import { subdomainPaths } from "@/routes/home/navigation";
+
+const template = readFileSync("index.html", "utf8");
+
+function subdomainDestination(href: string): string | undefined {
+  const script = template.match(/<script[^>]*data-subdomain-redirect[^>]*>([\s\S]*?)<\/script>/)?.[1];
+  expect(script).toBeDefined();
+  const replace = vi.fn();
+  runInNewContext(script!
+    .replaceAll("__APP_SUBDOMAIN_PATHS__", JSON.stringify(subdomainPaths))
+    .replaceAll("__APP_STORY_PATHS__", "{}"), {
+    URL,
+    window: { location: { href, replace }, history: { state: null } },
+  });
+  return replace.mock.calls[0]?.[0];
+}
 
 const suites = [
   ["seal", "verification"],

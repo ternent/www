@@ -15,28 +15,14 @@ export const sectionPaths = {
 } as const;
 
 export type StorySection = keyof typeof sectionPaths;
-const subdomainSections = {
-  seal: "verification",
-  identity: "identity",
-  concord: "concord",
-  ledger: "history",
-  armour: "encryption",
-} as const satisfies Record<string, StorySection>;
+export const subdomainPaths = {
+  "seal.ternent.dev": sectionPaths.verification,
+  "identity.ternent.dev": sectionPaths.identity,
+  "concord.ternent.dev": sectionPaths.concord,
+  "ledger.ternent.dev": sectionPaths.history,
+  "armour.ternent.dev": sectionPaths.encryption,
+} as const;
 const scrollReplacements = new Set<string>();
-
-export function subdomainDestination(href: string): string | undefined {
-  const source = new URL(href);
-  const entry = Object.entries(subdomainSections).find(
-    ([subdomain]) => source.hostname === `${subdomain}.ternent.dev`,
-  );
-  if (!entry) return undefined;
-
-  const destination = new URL("https://ternent.dev");
-  destination.pathname = source.pathname === "/" ? sectionPaths[entry[1]] : source.pathname;
-  destination.search = source.search;
-  destination.hash = source.hash;
-  return destination.href;
-}
 
 export function isStorySection(section: string): section is StorySection {
   return Object.hasOwn(sectionPaths, section);

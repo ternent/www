@@ -3,6 +3,26 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <script data-subdomain-redirect>
+      (function () {
+        var paths = __APP_SUBDOMAIN_PATHS__;
+        var url = new URL(window.location.href);
+        if (Object.hasOwn(paths, url.hostname)) {
+          var path = paths[url.hostname];
+          url.protocol = "https:";
+          url.hostname = "ternent.dev";
+          url.port = "";
+          if (url.pathname === "/") url.pathname = path;
+          window.location.replace(url.href);
+          return;
+        }
+        var sections = __APP_STORY_PATHS__;
+        var section = sections[url.pathname];
+        if ((section && section !== "overview") || (window.history.state && window.history.state.scroll)) {
+          document.documentElement.style.visibility = "hidden";
+        }
+      })();
+    </script>
     <meta name="theme-color" content="__APP_THEME_COLOR__" />
     <link rel="icon" href="/favicon.ico" />
     <link rel="manifest" href="/manifest.webmanifest" />
@@ -24,6 +44,23 @@
   </head>
   <body>
     <div id="app"></div>
+    <script data-initial-position>
+      (function () {
+        try {
+          var sections = __APP_STORY_PATHS__;
+          var section = sections[window.location.pathname];
+          var saved = window.history.state && window.history.state.scroll;
+          if (saved) {
+            window.scrollTo({ left: saved.left, top: saved.top, behavior: "instant" });
+          } else if (section) {
+            var target = document.getElementById(section);
+            if (target) window.scrollTo({ left: 0, top: Math.max(0, target.getBoundingClientRect().top + window.scrollY - 100), behavior: "instant" });
+          }
+        } finally {
+          document.documentElement.style.removeProperty("visibility");
+        }
+      })();
+    </script>
     <script type="module" src="/src/main.ts"></script>
   </body>
 </html>

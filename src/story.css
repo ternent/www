@@ -12,7 +12,6 @@ body {
   --space-heading: clamp(24px, 2.5vw, 32px);
   --space-copy: 24px;
   --space-column: clamp(40px, 7vw, 96px);
-  scroll-behavior: smooth;
   scroll-padding-top: 100px;
 }
 * {

@@ -1,11 +1,68 @@
-import { shallowMount } from "@vue/test-utils";
+import { flushPromises, mount, shallowMount } from "@vue/test-utils";
 import { nextTick } from "vue";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
+import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import RouteHome from "@/routes/home/RouteHome.vue";
-import { sectionPaths } from "@/routes/home/navigation";
+import { routes } from "@/routes";
+import { consumeSectionScroll, replaceVisibleSection, sectionPaths } from "@/routes/home/navigation";
 import { useThemeMode } from "@/modules/ui";
 
 describe("RouteHome", () => {
+  it("keeps the same story DOM during section navigation and scroll tracking", async () => {
+    const router = createRouter({ history: createMemoryHistory(), routes });
+    await router.push("/");
+    await router.isReady();
+    const wrapper = mount(RouterView, { global: { plugins: [router] } });
+    try {
+      const main = wrapper.get("main").element;
+      const section = wrapper.get("#concord").element;
+      await router.push("/concord");
+      await flushPromises();
+      expect(wrapper.get("main").element).toBe(main);
+      expect(wrapper.get("#concord").element).toBe(section);
+      await replaceVisibleSection(router, "history");
+      await flushPromises();
+      expect(wrapper.get("main").element).toBe(main);
+      expect(wrapper.get("#concord").element).toBe(section);
+    } finally {
+      wrapper.unmount();
+      consumeSectionScroll("/ledger");
+    }
+  });
+
+  it("fades section content without shifting its text", () => {
+    let onIntersection: IntersectionObserverCallback | undefined;
+    const observer = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
+    vi.stubGlobal("IntersectionObserver", vi.fn(function (callback: IntersectionObserverCallback) {
+      onIntersection = callback;
+      return observer;
+    }));
+    const wrapper = shallowMount(RouteHome, {
+      global: {
+        stubs: {
+          RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
+        },
+      },
+    });
+
+    try {
+      const content = wrapper.get("#concord > div").element;
+      const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({ cancel: vi.fn(), onfinish: null }));
+      Object.defineProperty(content, "animate", { value: animate });
+      onIntersection?.(
+        [{ target: content, isIntersecting: true } as IntersectionObserverEntry],
+        observer as unknown as IntersectionObserver,
+      );
+      expect(animate).toHaveBeenCalled();
+      for (const [frames] of animate.mock.calls) {
+        expect(frames.every((frame) => !frame.transform || frame.transform === "none")).toBe(true);
+      }
+    } finally {
+      wrapper.unmount();
+      vi.unstubAllGlobals();
+    }
+  });
+
   it("keeps the story readable without the playground and switches package themes", async () => {
     const theme = useThemeMode();
     const previousMode = theme.mode.value;

@@ -57,7 +57,7 @@ The five suite subdomains serve the app through Cloudflare Workers. On page load
 
 Root URLs map to the suite route. Explicit paths, query strings, and hashes carry across to the main host; the router then applies its usual legacy-hash handling. Other hosts, including localhost and preview hosts, are untouched.
 
-This is a JavaScript redirect using `location.replace`, so Back does not revisit the subdomain entry. It adds no arrival animation. The redirect lives in [navigation.ts](src/routes/home/navigation.ts) and runs from [main.ts](src/main.ts). DNS and Worker routing are configured separately.
+This is a JavaScript redirect using `location.replace`, so Back does not revisit the subdomain entry. The mappings live in [navigation.ts](src/routes/home/navigation.ts); the redirect runs in [index.html](index.html) before the app bundle loads. Direct section links and saved refresh positions are set before the page becomes visible. Fade-in effects change opacity without moving the text. DNS and Worker routing are configured separately.
 
 ## Editing the site
 

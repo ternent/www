@@ -2,7 +2,7 @@ import { ViteSSG } from "vite-ssg";
 import App from "./App.vue";
 import { routes } from "./routes";
 import { installAppProviders } from "./app/bootstrap/createApp";
-import { consumeSectionScroll, legacySectionPath, subdomainDestination } from "./routes/home/navigation";
+import { consumeSectionScroll, legacySectionPath } from "./routes/home/navigation";
 import registerSW from "./utils/registerSW";
 import { pageSeo } from "./app/config/page-seo";
 
@@ -11,11 +11,6 @@ import "@/app/config/theme.generated";
 import "@/app/config/suite-themes";
 import "./style.css";
 import "./story.css";
-
-if (!import.meta.env.SSR) {
-  const destination = subdomainDestination(window.location.href);
-  if (destination) window.location.replace(destination);
-}
 
 export const createApp = ViteSSG(
   App,
