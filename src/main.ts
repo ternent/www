@@ -21,7 +21,8 @@ export const createApp = ViteSSG(
       if (
         tool(to.path) &&
         tool(to.path) === tool(from.path) &&
-        to.query.example === from.query.example
+        to.query.example === from.query.example &&
+        (tool(to.path) === "inspect" || to.path === from.path)
       )
         return false;
       const section = to.meta.storySection;

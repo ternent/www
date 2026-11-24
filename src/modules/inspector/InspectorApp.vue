@@ -207,7 +207,7 @@ function drop(event: DragEvent) {
   void open(files[0]!);
 }
 function enter(event: DragEvent) {
-  if (event.dataTransfer?.types.includes("Files")) dragDepth.value++;
+  if (!props.loadExample && event.dataTransfer?.types.includes("Files")) dragDepth.value++;
 }
 async function close() {
   if (props.loadExample) {

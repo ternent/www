@@ -23,7 +23,9 @@ test("the Seal example verifies actual bytes, detects edits without re-signing a
   await router.isReady();
   const wrapper = mount(App, { global: { plugins: [router], stubs: { ThemeModeToggle: true } } });
   cleanups.push(() => wrapper.unmount());
-  await vi.waitFor(() => expect(wrapper.get(".seal-result").text()).toContain("Content verified"));
+  await vi.waitFor(() => expect(wrapper.get(".seal-result").text()).toContain("Content verified"), {
+    timeout: 5_000,
+  });
   const proof = wrapper.get(".seal-proof pre").text();
   expect(JSON.parse(proof).type).toBe("seal-proof");
   await wrapper.get("#seal-content").setValue("Someone changed the bytes.");

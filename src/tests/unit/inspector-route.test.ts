@@ -63,9 +63,18 @@ async function setup(path = "/inspect") {
   return { router, wrapper, drop };
 }
 
+async function waitForPreparedView(check: () => void) {
+  // Real identities, encryption and signed commits can take over a second on CI.
+  await vi.waitFor(check, { timeout: 5_000 });
+}
+
 test("the actual example download opens through the inspector file picker with the same verified head", async () => {
   const { wrapper, router } = await setup("/examples");
-  await vi.waitFor(() => expect(wrapper.findAll(".identity-button")).toHaveLength(4));
+  await waitForPreparedView(() => {
+    const error = wrapper.find('[role="alert"]');
+    expect(error.exists(), error.exists() ? error.text() : "").toBe(false);
+    expect(wrapper.findAll(".identity-button")).toHaveLength(4);
+  });
   const expectedHead = wrapper.get(".head-label").attributes("title");
   let downloaded!: Blob;
   let filename = "";
@@ -228,7 +237,11 @@ test("oversized and multi-file drops retain the current document and give an exp
 
 test("a fresh encrypted-payload link loads a public example and retains its document across views and browser back", async () => {
   const { wrapper, router } = await setup("/inspect/entries?example=notes&focus=encrypted-payload");
-  await vi.waitFor(() => expect(wrapper.find(".stored-code").exists()).toBe(true));
+  await waitForPreparedView(() => {
+    const error = wrapper.find('[role="alert"]');
+    expect(error.exists(), error.exists() ? error.text() : "").toBe(false);
+    expect(wrapper.find(".stored-code").exists()).toBe(true);
+  });
   expect(wrapper.get(".file-summary").text()).toContain("notes-example.json");
   expect(wrapper.get(".readable-code").text()).toContain("No readable event");
   expect(wrapper.get(".stored-code").text()).not.toContain("A document you can take with you");
@@ -255,7 +268,11 @@ test("a fresh encrypted-payload link loads a public example and retains its docu
 
 test("homepage presets preserve both an imported file and unfinished notes", async () => {
   const { wrapper, router, drop } = await setup("/examples");
-  await vi.waitFor(() => expect(wrapper.findAll(".identity-button")).toHaveLength(4));
+  await waitForPreparedView(() => {
+    const error = wrapper.find('[role="alert"]');
+    expect(error.exists(), error.exists() ? error.text() : "").toBe(false);
+    expect(wrapper.findAll(".identity-button")).toHaveLength(4);
+  });
   await wrapper.get("#note-title").setValue("My unfinished work");
   await router.push("/inspect");
   await flushPromises();
@@ -264,7 +281,18 @@ test("homepage presets preserve both an imported file and unfinished notes", asy
   await router.push("/");
   await flushPromises();
   await wrapper.get("#encryption .text-link").trigger("click");
-  await vi.waitFor(() => expect(wrapper.find(".stored-code").exists()).toBe(true));
+  await waitForPreparedView(() => {
+    const error = wrapper.find('[role="alert"]');
+    expect(error.exists(), error.exists() ? error.text() : "").toBe(false);
+    expect(wrapper.find(".stored-code").exists()).toBe(true);
+  });
+  expect(wrapper.get(".file-summary h2").text()).toBe("notes-example.json");
+  await wrapper
+    .get(".inspector-workbench")
+    .trigger("dragenter", { dataTransfer: { types: ["Files"] } });
+  expect(wrapper.find(".drop-overlay").exists()).toBe(false);
+  await drop(file(signedSource, "replacement.json"));
+  expect(wrapper.get('[role="alert"]').text()).toContain("Your files");
   expect(wrapper.get(".file-summary h2").text()).toBe("notes-example.json");
   await wrapper.get('.example-banner a[href="/inspect"]').trigger("click");
   await flushPromises();
