@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import "./workbench.css";
+import "./inspector.css";
 import { computed, nextTick, onActivated, onMounted, ref, shallowRef } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { inspectDocument, MAX_FILE_BYTES, type OpenedDocument } from "./document";
@@ -521,6 +523,3 @@ async function recheck() {
     </template>
   </div>
 </template>
-
-<style src="./workbench.css"></style>
-<style src="./inspector.css"></style>

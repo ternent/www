@@ -1,19 +1,14 @@
 <script setup lang="ts">
+import ToolPage from "@/components/ToolPage.vue";
 import Examples from "@/modules/examples/Examples.vue";
 </script>
 
 <template>
-  <main id="main-content" class="examples-page" tabindex="-1">
-    <h1 class="sr-only" tabindex="-1">Examples — encrypted notes</h1>
+  <ToolPage
+    class="examples-page"
+    title="Examples"
+    description="Try encrypted notes, switch readers and inspect the signed document."
+  >
     <Examples />
-  </main>
+  </ToolPage>
 </template>
-
-<style scoped>
-.examples-page {
-  width: 100%;
-  min-width: 0;
-  margin: 0;
-  padding: 0;
-}
-</style>

@@ -68,7 +68,7 @@ Earlier `/playground` URLs redirect to `/examples`. Former playground/examples i
 
 ## Examples ownership and review
 
-`/examples` is a full-width notes app with readers, privacy groups, an entry list and an editor. A compact bottom strip owns auto-commit, staged changes, Commit and Discard. JSON, history and verification live in the standalone Inspector. Inspect document transfers a committed snapshot and the selected reader's inspection in memory; unfinished editor text and drafts stay in Examples.
+`/examples` shares the site header, footer, content width and tool-page heading with Inspector. Its contained notes app comes with readers, privacy groups, an entry list and an editor. A compact bottom strip owns auto-commit, staged changes, Commit and Discard. JSON, history and verification live in the standalone Inspector. Inspect document transfers a committed snapshot and the selected reader's inspection in memory; unfinished editor text and drafts stay in Examples.
 
 `src/modules/examples/model.ts` owns note command validation, domain events and a
 pure projection. Note identifiers are scoped to their privacy group.
@@ -134,8 +134,7 @@ stays encrypted; public metadata and original stored records remain available. L
 or other JSON formats get generic inspection with no signature-verification claim.
 
 `src/modules/inspector` owns file inspection and shared record/history/source/
-verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both reuse the record presentation styles. Inspector uses the site header and footer;
-Examples keeps its application header. Meaningful tests cover real signed inputs, foreign models,
+verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both tools share the record presentation styles, ToolPage layout and standard site header and footer. Tool links live in context and in the footer. Meaningful tests cover real signed inputs, foreign models,
 tampering, duplicate keys, source/byte preservation, escaped content, failed and racing
 file opens, route navigation and preservation of unfinished example work.
 

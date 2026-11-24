@@ -1,4 +1,6 @@
 <script setup lang="ts">
+import "../inspector/workbench.css";
+import "./examples.css";
 import { computed, onMounted, ref, shallowRef, triggerRef } from "vue";
 import { useRouter } from "vue-router";
 import type { AudienceId } from "@ternent/concord";
@@ -480,7 +482,3 @@ function reset() {
     </template>
   </div>
 </template>
-
-<style src="../inspector/workbench.css"></style>
-
-<style src="./examples.css"></style>

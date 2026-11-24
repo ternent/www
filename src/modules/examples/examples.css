@@ -1,9 +1,45 @@
-.examples-workbench {
+.examples-page .examples-workbench {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  grid-template-columns: 188px minmax(0, 1fr);
+
+  .sidebar {
+    border-radius: 12px 0 0 12px;
+    overflow: visible;
+  }
+  .content-grid,
+  .notes-panel,
+  .editor-panel {
+    overflow: visible;
+  }
+  .intro {
+    flex-wrap: wrap;
+  }
+  .document-title,
+  .document-title > div {
+    min-width: 0;
+  }
+  .document-title {
+    flex: 1;
+  }
+  .document-title h2 {
+    font-size: 18px;
+  }
+  .document-glyph {
+    flex-shrink: 0;
+  }
+  .document-actions {
+    flex-wrap: wrap;
+  }
+  .status-strip {
+    border-radius: 0 0 12px;
+  }
+
   .content-grid {
-    grid-template-columns: minmax(240px, 0.7fr) minmax(0, 1.3fr);
+    grid-template-columns: minmax(210px, 0.7fr) minmax(0, 1.3fr);
   }
   .editor-panel {
-    padding: 30px clamp(24px, 4vw, 64px);
+    padding: 30px 24px;
   }
   .note-editor {
     max-width: 900px;
@@ -45,7 +81,24 @@
     font-size: 11px;
     min-height: 32px;
   }
+  @media (max-width: 1000px) {
+    .content-grid {
+      grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
+    }
+    .editor-panel {
+      padding: 24px 20px;
+    }
+    .document-title .small {
+      display: none;
+    }
+  }
   @media (max-width: 800px) {
+    .sidebar {
+      border-radius: 12px 12px 0 0;
+    }
+    .status-strip {
+      border-radius: 0 0 12px 12px;
+    }
     .editor-panel {
       padding: 26px;
     }
@@ -58,8 +111,8 @@
     .note-editor textarea {
       min-height: 200px;
     }
-    .document-title .small {
-      display: none;
+    .document-title {
+      flex-basis: 100%;
     }
     .document-actions .button {
       padding-inline: 9px;

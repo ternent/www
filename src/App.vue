@@ -2,7 +2,6 @@
 import { computed, onMounted, onBeforeUnmount, nextTick, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Logo from "@/components/BrandLogo.vue";
-import WorkbenchHeader from "@/modules/inspector/WorkbenchHeader.vue";
 import {
   sectionPaths,
   isStorySection,
@@ -152,10 +151,9 @@ onBeforeUnmount(() => {
 });
 </script>
 <template>
-  <div v-show="!isExamples" ref="background" class="page-background" aria-hidden="true"></div>
+  <div ref="background" class="page-background" aria-hidden="true"></div>
   <a class="skip-link" href="#main-content" @click.prevent="skipToContent">Skip to content</a>
-  <WorkbenchHeader v-if="isExamples" active="examples" />
-  <header v-else class="site-header">
+  <header class="site-header">
     <div class="header-inner">
       <RouterLink class="brand-mark" to="/" aria-label="ternent.dev home"
         ><Logo aria-hidden="true"
@@ -184,9 +182,6 @@ onBeforeUnmount(() => {
           :aria-current="isActive(id) ? 'location' : undefined"
           >{{ label }}</RouterLink
         >
-        <RouterLink to="/inspect" :aria-current="isInspector ? 'page' : undefined"
-          >Inspector</RouterLink
-        >
         <a class="github-link" href="https://github.com/ternent"
           >GitHub <span aria-hidden="true">↗</span></a
         >
@@ -198,7 +193,7 @@ onBeforeUnmount(() => {
       <component :is="Component" />
     </KeepAlive>
   </RouterView>
-  <footer v-if="!isExamples" class="site-footer">
+  <footer class="site-footer">
     <div class="footer-inner">
       <div class="footer-intro">
         <div>

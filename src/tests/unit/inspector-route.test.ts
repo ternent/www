@@ -112,7 +112,7 @@ test("a dropped signed file is verified read-only and retained across inspector 
   expect(wrapper.find(".site-footer").exists()).toBe(true);
   expect(wrapper.find(".workbench-header").exists()).toBe(false);
   expect(wrapper.get("main h1").text()).toBe("Document inspector");
-  expect(wrapper.get('.site-header a[href="/inspect"]').attributes("aria-current")).toBe("page");
+  expect(wrapper.find('.site-header a[href="/inspect"]').exists()).toBe(false);
   await drop(file(signedSource, "my-ledger.json"));
   await vi.waitFor(() => expect(wrapper.get(".file-summary h2").text()).toBe("my-ledger.json"));
   expect(wrapper.get(".status-strip").text()).toContain("Signed history verified");
@@ -140,9 +140,9 @@ test("a dropped signed file is verified read-only and retained across inspector 
   expect(wrapper.find(".raw-actions").exists()).toBe(false);
   await router.push("/examples");
   await flushPromises();
-  expect(wrapper.find(".site-header").exists()).toBe(false);
-  expect(wrapper.find(".site-footer").exists()).toBe(false);
-  expect(wrapper.find(".workbench-header").exists()).toBe(true);
+  expect(wrapper.find(".site-header").exists()).toBe(true);
+  expect(wrapper.find(".site-footer").exists()).toBe(true);
+  expect(wrapper.find(".workbench-header").exists()).toBe(false);
   await router.push("/inspect/json");
   await flushPromises();
   expect(wrapper.find(".site-header").exists()).toBe(true);

@@ -52,6 +52,12 @@ async function open(path: string, withShell = false) {
 
 test("inspection opens the committed example in the standalone tool with its reader context", async () => {
   const { router, wrapper } = await open("/examples", true);
+  expect(wrapper.get("main h1").text()).toBe("Examples");
+  expect(wrapper.find(".site-header").exists()).toBe(true);
+  expect(wrapper.find(".site-footer").exists()).toBe(true);
+  expect(wrapper.find(".workbench-header").exists()).toBe(false);
+  expect(wrapper.find('.site-header a[href="/inspect"]').exists()).toBe(false);
+  expect(wrapper.get('.site-footer a[href="/inspect"]').text()).toBe("Document inspector");
   const head = wrapper.get(".head-label").attributes("title");
   expect(wrapper.find(".entry-inspector").exists()).toBe(false);
   expect(wrapper.find(".view-bar").exists()).toBe(false);
