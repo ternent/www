@@ -220,6 +220,7 @@ async function recheck() {
   <div
     ref="root"
     class="document-workbench inspector-workbench"
+    :class="{ 'has-document': !!opened }"
     :aria-busy="busy"
     @dragenter.prevent="enter"
     @dragover.prevent
@@ -242,9 +243,7 @@ async function recheck() {
     <section v-if="!opened" class="inspector-welcome">
       <div class="file-drop">
         <div class="file-glyph" aria-hidden="true">{ }</div>
-        <span class="eyebrow">Document inspector</span>
         <h2>Drop a JSON file.</h2>
-        <p>Explore its contents. Verify signed Ledger and Concord history.</p>
         <button
           ref="chooseFile"
           class="button primary"
@@ -279,74 +278,21 @@ async function recheck() {
     </section>
 
     <template v-else>
-      <aside class="sidebar" aria-label="Document information">
-        <div class="file-summary">
-          <span class="eyebrow">Opened document</span>
-          <h2 :title="opened.name">{{ opened.name }}</h2>
-          <span class="file-kind"
-            >{{
-              opened.kind === "concord" ? "Concord" : opened.kind === "ledger" ? "Ledger" : "JSON"
-            }}
-            <span>{{ size }}</span></span
-          >
-        </div>
-        <dl v-if="report" class="file-facts">
-          <div>
-            <dt>Document ID</dt>
-            <dd class="mono">{{ report.documentId ?? "Unavailable" }}</dd>
-          </div>
-          <div>
-            <dt>Head</dt>
-            <dd class="mono">{{ report.head ?? "Unavailable" }}</dd>
-          </div>
-          <div>
-            <dt>Commits checked</dt>
-            <dd>{{ report.checkedCommits }}</dd>
-          </div>
-          <div>
-            <dt>Entries checked</dt>
-            <dd>{{ report.checkedEntries }}</dd>
-          </div>
-        </dl>
-        <div v-if="inspection?.concord?.requirements.length" class="file-models">
-          <h3>Unavailable requirements</h3>
-          <div v-for="item in inspection.concord.requirements" :key="item.kind">
-            <span>{{ item.kind }}</span><code>{{ item.ref.id }} · {{ item.ref.version }}</code>
-          </div>
-        </div>
-        <div class="sidebar-bottom">
-          <details class="demo-help">
-            <summary>About inspection <span aria-hidden="true">?</span></summary>
-            <p>
-              Verification uses public keys in the file. It checks signed history, not who you
-              should trust or whether this is the newest copy.
-            </p>
-            <p>
-              No application model, system implementation or private key is loaded. Concord
-              declarations and public records stay inspectable. Encrypted contents stay protected.
-            </p>
-            <p v-if="opened.contextLabel">
-              This snapshot includes the selected example reader's inspection. Opening a file
-              separately uses public inspection and does not import that context.
-            </p>
-            <p>
-              Your file stays in this tab, including when switching tools. Close it or reload to
-              clear it.
-            </p>
-          </details>
-          <span class="local-indicator"><span aria-hidden="true"></span> Your file stays here</span>
-        </div>
-      </aside>
-
       <section class="main" aria-label="Document inspection">
         <div class="intro">
-          <div class="document-title">
+          <div class="document-title file-summary">
             <span class="document-glyph" aria-hidden="true">{ }</span>
             <div>
               <h2 ref="documentTitle" tabindex="-1" :title="opened.name">{{ opened.name }}</h2>
               <span class="small muted"
                 >{{ size }} ·
-                {{ opened.kind === "json" ? "JSON document" : "Ledger container" }}</span
+                {{
+                  opened.kind === "concord"
+                    ? "Concord document"
+                    : opened.kind === "ledger"
+                      ? "Ledger document"
+                      : "JSON document"
+                }}</span
               >
             </div>
           </div>
@@ -413,11 +359,57 @@ async function recheck() {
             </div>
             <RouterLink v-if="report" to="/inspect/verification">View checks ↗</RouterLink>
           </div>
+          <section v-if="report" class="document-details" aria-label="Document information">
+            <h2>File details</h2>
+            <dl class="file-facts">
+              <div>
+                <dt>Document ID</dt>
+                <dd class="mono">{{ report.documentId ?? "Unavailable" }}</dd>
+              </div>
+              <div>
+                <dt>Head</dt>
+                <dd class="mono">{{ report.head ?? "Unavailable" }}</dd>
+              </div>
+              <div>
+                <dt>Commits checked</dt>
+                <dd>{{ report.checkedCommits }}</dd>
+              </div>
+              <div>
+                <dt>Entries checked</dt>
+                <dd>{{ report.checkedEntries }}</dd>
+              </div>
+            </dl>
+            <div v-if="inspection?.concord?.requirements.length" class="file-models">
+              <h3>Unavailable requirements</h3>
+              <div v-for="item in inspection.concord.requirements" :key="item.kind">
+                <span>{{ item.kind }}</span><code>{{ item.ref.id }} · {{ item.ref.version }}</code>
+              </div>
+            </div>
+          </section>
           <JsonBrowser v-if="opened.parsed.ok" :value="opened.parsed.value" />
           <div v-else class="invalid-json">
             <p>The original source is still available for inspection.</p>
             <RouterLink class="button subtle" to="/inspect/json">Open source</RouterLink>
           </div>
+          <details class="demo-help inspection-help">
+            <summary>About inspection <span aria-hidden="true">?</span></summary>
+            <p>
+              Verification uses public keys in the file. It checks signed history, not who you
+              should trust or whether this is the newest copy.
+            </p>
+            <p>
+              No application model, system implementation or private key is loaded. Concord
+              declarations and public records stay inspectable. Encrypted contents stay protected.
+            </p>
+            <p v-if="opened.contextLabel">
+              This snapshot includes the selected example reader's inspection. Opening a file
+              separately uses public inspection and does not import that context.
+            </p>
+            <p>
+              Your file stays in this tab, including when switching tools. Close it or reload to
+              clear it.
+            </p>
+          </details>
         </section>
 
         <div v-else-if="view === 'entries' && inspection" class="inspection-entries">

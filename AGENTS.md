@@ -21,7 +21,10 @@ the selected reader's inspection over in memory. Keep drafts in the example and 
 provided inspection only to the matching verified document/head; never export keys or
 reader context in the file. Keep longer explanations in contextual help.
 
-`/inspect` is a standalone, read-only tool for user files. Keep record/history/
+`/inspect` is a standalone, read-only tool for user files. Use the standard site
+header, footer and content width. Keep file details in Overview and document views
+in one contained workspace with normal page scrolling; only source previews need
+bounded scrolling. Examples retain their full-width application shell. Keep record/history/
 verification presentation in `src/modules/inspector`; do not tie
 it to the notes model or demo identities. Verify original bytes through Ledger's
 published protocol API. Never normalize JSON before signature verification. Keep

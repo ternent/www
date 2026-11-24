@@ -1,18 +1,76 @@
-.inspector-page {
-  width: 100%;
-  margin: 0;
-  min-width: 0;
-}
-.inspector-workbench {
+.inspector-page .inspector-workbench {
   position: relative;
+  display: block;
+  height: auto;
+  min-height: 0;
+  min-width: 0;
+  border-radius: 12px;
+
+  &.has-document {
+    border: 1px solid var(--line);
+  }
+  h2,
+  h3 {
+    margin: 0;
+    font-weight: 550;
+    letter-spacing: -0.025em;
+    line-height: 1.5;
+  }
+  h2 {
+    font-size: 18px;
+  }
+  h3 {
+    font-size: 14px;
+  }
+  .main {
+    display: block;
+  }
+  .intro {
+    padding: 20px 24px;
+    flex-wrap: wrap;
+  }
+  .document-actions {
+    flex-wrap: wrap;
+  }
+  .document-glyph {
+    flex-shrink: 0;
+  }
+  .view-bar {
+    padding-inline: 24px;
+    background: var(--paper);
+    border-top: 1px solid var(--line);
+  }
+  .viewer-caption {
+    display: block;
+  }
+  .document-panel,
+  .entry-inspector,
+  .history-list,
+  .notes-panel {
+    overflow: visible;
+    max-height: none;
+  }
+  .document-panel {
+    padding: 24px;
+  }
+  .history-grid {
+    grid-template-columns: minmax(220px, 0.75fr) minmax(0, 1.25fr);
+    align-items: start;
+    gap: 24px;
+  }
+  .raw-editor {
+    height: 480px;
+    max-height: 70dvh;
+  }
+  .status-strip {
+    border-radius: 0 0 12px 12px;
+  }
   .inspector-welcome {
-    grid-column: 1 / -1;
     display: flex;
     flex-direction: column;
     align-items: center;
     justify-content: center;
-    padding: 56px 24px;
-    overflow: auto;
+    padding: 0;
     gap: 24px;
   }
   .file-drop {
@@ -23,35 +81,26 @@
     padding: 40px 48px;
     border: 1px dashed var(--line);
     border-radius: 12px;
-    width: min(100%, 640px);
+    width: 100%;
     text-align: center;
     background: var(--ui-surface);
   }
   .file-glyph {
     display: grid;
     place-items: center;
-    font: 30px var(--mono);
-    width: 72px;
-    height: 80px;
+    font: 22px var(--mono);
+    width: 48px;
+    height: 54px;
     border: 1px solid var(--line);
     border-radius: 8px;
     color: var(--accent);
     background: var(--paper);
-    margin-bottom: 10px;
-  }
-  .file-drop .eyebrow {
-    margin: 0;
+    margin-bottom: 4px;
   }
   .file-drop h2 {
-    font-size: clamp(28px, 4vw, 40px);
-    letter-spacing: -1.2px;
+    font-size: clamp(24px, 3vw, 30px);
+    letter-spacing: -0.04em;
     font-weight: 500;
-  }
-  .file-drop p {
-    max-width: 410px;
-    font-size: 15px;
-    line-height: 1.7;
-    color: var(--muted);
   }
   .file-drop .button {
     margin-top: 6px;
@@ -127,25 +176,19 @@
     font-size: 13px;
     color: var(--muted);
   }
-  .file-summary {
-    padding: 0 10px;
+  .document-details {
+    margin-bottom: 28px;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--line);
   }
-  .file-summary h2 {
-    font-size: 15px;
-    overflow-wrap: anywhere;
-    margin: 12px 0;
-  }
-  .file-kind {
-    display: flex;
-    justify-content: space-between;
-    gap: 8px;
-    font-size: 12px;
-    color: var(--muted);
+  .document-details > h2 {
+    font-size: 14px;
+    margin-bottom: 16px;
   }
   .file-facts {
     display: grid;
-    gap: 20px;
-    padding: 0 10px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 32px;
     margin: 0;
   }
   .file-facts > div {
@@ -161,12 +204,12 @@
     margin: 0;
   }
   .file-facts .mono {
-    font-size: 10px;
+    font-size: 12px;
     line-height: 1.9;
     overflow-wrap: anywhere;
   }
   .file-models {
-    padding: 0 10px;
+    margin-top: 24px;
   }
   .file-models h3 {
     font-size: 12px;
@@ -182,11 +225,12 @@
     color: var(--muted);
   }
   .file-models code {
-    font: 10px/1.8 var(--mono);
+    font: 12px/1.8 var(--mono);
     overflow-wrap: anywhere;
   }
   .document-title {
     min-width: 0;
+    flex: 1;
   }
   .document-title > div {
     min-width: 0;
@@ -195,6 +239,7 @@
     white-space: nowrap;
     overflow: hidden;
     text-overflow: ellipsis;
+    font-size: 17px;
   }
   .close-document {
     border: 0;
@@ -205,10 +250,7 @@
     min-height: 36px;
   }
   .inspection-overview {
-    min-height: 0;
-    flex: 1;
-    overflow: auto;
-    padding: 28px;
+    padding: 24px;
   }
   .inspection-summary {
     display: flex;
@@ -266,8 +308,7 @@
     min-width: 0;
   }
   .json-tree {
-    max-height: 65dvh;
-    overflow: auto;
+    overflow-wrap: anywhere;
     padding: 0 12px 10px 0;
   }
   .json-browser h2 {
@@ -371,9 +412,7 @@
   .inspection-entries {
     display: grid;
     grid-template-columns: 280px minmax(0, 1fr);
-    min-height: 0;
-    flex: 1;
-    overflow: auto;
+    align-items: start;
   }
   .inspection-entries > .entry-inspector {
     display: block;
@@ -394,6 +433,17 @@
     background: var(--paper);
     color: var(--ink);
   }
+  .inspection-help {
+    margin-top: 28px;
+    padding-top: 20px;
+    border-top: 1px solid var(--line);
+    font-size: 12px;
+    max-width: 680px;
+  }
+  .inspection-help summary {
+    justify-content: flex-start;
+    gap: 12px;
+  }
   .unsupported-document {
     display: flex;
     align-items: center;
@@ -412,75 +462,56 @@
   .unsupported-document .empty-symbol {
     margin: 0;
   }
-  @media (max-width: 1000px) {
+  @media (max-width: 900px) {
+    .history-grid,
     .json-browser {
       grid-template-columns: 1fr;
     }
-    .json-tree {
-      max-height: 350px;
+    .view-bar {
+      flex-wrap: wrap;
+      gap: 0;
+    }
+    .viewer-caption {
+      padding-bottom: 12px;
     }
     .inspection-entries {
       grid-template-columns: 220px minmax(0, 1fr);
     }
   }
-  @media (max-width: 800px) {
-    .sidebar {
-      display: block;
-    }
-    .file-summary {
-      padding: 0;
-      display: flex;
-      align-items: center;
-      gap: 18px;
-    }
-    .file-summary > .eyebrow {
-      display: none;
-    }
-    .file-summary h2 {
-      margin: 0;
-    }
-    .file-kind {
-      gap: 12px;
-      margin-left: auto;
-      white-space: nowrap;
-    }
-    .file-facts,
-    .file-models {
-      display: none;
-    }
-    .sidebar-bottom {
-      margin-top: 12px;
-    }
-    .inspection-overview {
-      overflow: visible;
-      padding: 22px;
-    }
-    .inspection-entries {
-      overflow: visible;
-    }
-  }
   @media (max-width: 600px) {
-    .inspector-welcome {
-      padding: 28px 18px;
-    }
     .file-drop {
       padding: 30px 20px;
     }
-    .file-drop p {
-      font-size: 13px;
+    .intro {
+      align-items: flex-start;
+      gap: 16px;
+      padding: 20px 16px;
     }
-    .file-limit {
-      font-size: 10px;
+    .document-title {
+      flex-basis: 100%;
     }
     .document-title h2 {
-      font-size: 14px;
-      max-width: 45vw;
+      font-size: 16px;
     }
-    .download-original .download-label {
-      display: none;
+    .document-actions {
+      width: 100%;
     }
-    .inspection-overview {
+    .close-document {
+      margin-left: auto;
+    }
+    .view-bar {
+      padding-inline: 16px;
+    }
+    .view-bar nav {
+      justify-content: flex-start;
+      gap: 22px;
+    }
+    .inspection-overview,
+    .document-panel {
       padding: 22px 16px;
+    }
+    .file-facts {
+      grid-template-columns: 1fr;
     }
     .inspection-summary {
       flex-wrap: wrap;
@@ -490,7 +521,7 @@
       flex: 1;
     }
     .inspection-summary h2 {
-      font-size: 15px;
+      font-size: 16px;
     }
     .inspection-summary > a {
       margin-left: 44px;
@@ -498,24 +529,13 @@
     .inspection-entries {
       display: flex;
       flex-direction: column;
+      align-items: stretch;
     }
     .inspection-entries .notes-panel {
       border-right: 0;
-      max-height: 340px;
-      overflow: auto;
     }
     .inspection-entries > .entry-inspector {
       border-top: 1px solid var(--line);
-    }
-    .file-summary h2 {
-      max-width: 60%;
-      overflow: hidden;
-      white-space: nowrap;
-      text-overflow: ellipsis;
-    }
-    .view-bar nav {
-      justify-content: flex-start;
-      gap: 22px;
     }
   }
 }

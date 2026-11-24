@@ -106,7 +106,10 @@ inspectable. This is the same accepted alpha container break as the core librari
 
 ## Standalone document inspector
 
-Open `/inspect` to drag in a JSON file, choose a file or paste JSON. The tool accepts
+Open `/inspect` to drag in a JSON file, choose a file or paste JSON. It shares the
+site header, footer and content width. Once opened, the document has a compact
+file toolbar and view navigation. File details live in Overview; document views
+use normal page scrolling with bounded source previews. The tool accepts
 UTF-8 text up to 16 MiB and keeps it in memory. Navigation between tools retains the
 opened file; Close or reload clears the session. File contents are not uploaded,
 stored in browser storage or executed. Download original returns the original bytes.
@@ -131,8 +134,8 @@ stays encrypted; public metadata and original stored records remain available. L
 or other JSON formats get generic inspection with no signature-verification claim.
 
 `src/modules/inspector` owns file inspection and shared record/history/source/
-verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both use the same
-workbench styles and header. Meaningful tests cover real signed inputs, foreign models,
+verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both reuse the record presentation styles. Inspector uses the site header and footer;
+Examples keeps its application header. Meaningful tests cover real signed inputs, foreign models,
 tampering, duplicate keys, source/byte preservation, escaped content, failed and racing
 file opens, route navigation and preservation of unfinished example work.
 
