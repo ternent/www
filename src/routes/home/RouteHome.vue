@@ -23,8 +23,8 @@ const packages = [
     text: "Create a signing identity locally. Its public key lets other people check your signatures. Its private material lets you sign and derive encryption keys. You can export it and recover it with a mnemonic.",
     detail:
       "The stable identity model uses Ed25519 signatures, with derived X25519 and age-compatible encryption keys. A key identifies a signer. Connecting that signer to a person still needs a trusted introduction.",
-    action: "Explore the demo identity",
-    target: "/examples",
+    action: "Create or recover an identity",
+    target: "/demo/identity",
     source: "identity",
   },
   {
@@ -37,7 +37,7 @@ const packages = [
     detail:
       "Armour provides age-compatible encryption for identities, recipients and passphrases. Signatures and public metadata remain visible. Encryption protects the payload rather than hiding the existence of the document.",
     action: "Inspect the encrypted payload",
-    target: "/examples",
+    target: "/inspect/entries?example=notes&focus=encrypted-payload",
     source: "armour",
   },
   {
@@ -50,7 +50,7 @@ const packages = [
     detail:
       "The same proof model is available through JavaScript, a command-line tool and a GitHub Action. Verification needs the content and public proof. It does not need the private signing key.",
     action: "Verify a signed document",
-    target: "/inspect/verification",
+    target: "/examples/seal",
     source: "seal",
   },
   {
@@ -63,7 +63,7 @@ const packages = [
     detail:
       "Ledger handles append, commit, verification and replay. Concord adds application commands and replay plugins on top. Deterministic replay depends on using the same rules, and encrypted content requires the matching decryption capability.",
     action: "Follow the commit history",
-    target: "/inspect/history",
+    target: "/inspect/history?example=notes&focus=latest-commit",
     source: "ledger",
   },
 ];
@@ -201,9 +201,7 @@ const packages = [
           The example runs the published alpha packages, using Concord commands and replay on
           Ledger's signed history.
         </p>
-        <a href="https://www.npmjs.com/package/@ternent/concord?activeTab=readme"
-          >Explore the published Concord package ↗</a
-        >
+        <RouterLink class="text-link" to="/examples">Try the encrypted notes example ↗</RouterLink>
       </div>
     </section>
     <section id="open-source" class="story-section concept-section">

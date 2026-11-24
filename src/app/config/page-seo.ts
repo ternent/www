@@ -6,21 +6,26 @@ export function pageSeo(path: string) {
   const examples = path === "/examples" || path.startsWith("/examples/");
   const demo = path.startsWith("/demo/");
   const inspector = path === "/inspect" || path.startsWith("/inspect/");
-  const canonical = `${origin}${inspector ? "/inspect" : examples ? "/examples" : demo ? path : "/"}`;
-  const title = inspector
-    ? "Document inspector | ternent.dev"
-    : examples
-      ? "Examples: rebuild from signed history | ternent.dev"
-      : demo
-        ? "Local identity demo | ternent.dev"
-        : "Software built on signed history | ternent.dev";
-  const description = inspector
-    ? "Inspect JSON and verify signed Ledger and Concord documents locally in your browser. Your file stays in your tab."
-    : examples
-      ? "Explore real encryption, signatures and replay in your browser. Verify an encrypted history and rebuild application state with Concord."
-      : demo
-        ? "Create, recover and unlock a local signing identity in your browser."
-        : siteDescription;
+  const seal = path === "/examples/seal";
+  const canonical = `${origin}${inspector ? "/inspect" : seal ? "/examples/seal" : examples ? "/examples" : demo ? path : "/"}`;
+  const title = seal
+    ? "Seal: verify a signed file | ternent.dev"
+    : inspector
+      ? "Document inspector | ternent.dev"
+      : examples
+        ? "Examples: rebuild from signed history | ternent.dev"
+        : demo
+          ? "Local identity demo | ternent.dev"
+          : "Software built on signed history | ternent.dev";
+  const description = seal
+    ? "Verify a portable Seal proof locally, edit its file content and inspect the actual hash and signature results."
+    : inspector
+      ? "Inspect JSON and verify signed Ledger and Concord documents locally in your browser. Your file stays in your tab."
+      : examples
+        ? "Explore real encryption, signatures and replay in your browser. Verify an encrypted history and rebuild application state with Concord."
+        : demo
+          ? "Create, recover and unlock a local signing identity in your browser."
+          : siteDescription;
 
   return {
     title,

@@ -123,8 +123,10 @@ onMounted(() => {
     refreshSections();
     if (scrolling || !from.matched.length) return;
     if (
-      (isExamples.value && (from.path === "/examples" || from.path.startsWith("/examples/"))) ||
-      (isInspector.value && (from.path === "/inspect" || from.path.startsWith("/inspect/")))
+      (isExamples.value && to.path === from.path) ||
+      (isInspector.value &&
+        (from.path === "/inspect" || from.path.startsWith("/inspect/")) &&
+        to.query.example === from.query.example)
     )
       return;
     const section =
@@ -191,7 +193,7 @@ onBeforeUnmount(() => {
     </div>
   </header>
   <RouterView v-slot="{ Component }">
-    <KeepAlive include="RouteExamples,RouteInspect">
+    <KeepAlive include="RouteExamples,RouteInspect,RouteSealExample">
       <component :is="Component" />
     </KeepAlive>
   </RouterView>

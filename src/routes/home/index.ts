@@ -15,6 +15,11 @@ const homeRoutes: RouteModule = [
       meta: { storySection: section },
     })),
   { path: "/examples", name: "examples", component: examples },
+  {
+    path: "/examples/seal",
+    name: "seal-example",
+    component: () => import("./RouteSealExample.vue"),
+  },
   ...["history", "json", "verification"].map((view) => ({
     path: `/examples/${view}`,
     redirect: (to: RouteLocation) => ({ path: `/inspect/${view}`, query: to.query, hash: to.hash }),

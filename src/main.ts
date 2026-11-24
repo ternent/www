@@ -18,7 +18,12 @@ export const createApp = ViteSSG(
       if (consumeSectionScroll(to.fullPath)) return false;
       if (savedPosition) return { ...savedPosition, behavior: "auto" };
       const tool = (path: string) => /^\/(examples|inspect)(?:\/|$)/.exec(path)?.[1];
-      if (tool(to.path) && tool(to.path) === tool(from.path)) return false;
+      if (
+        tool(to.path) &&
+        tool(to.path) === tool(from.path) &&
+        to.query.example === from.query.example
+      )
+        return false;
       const section = to.meta.storySection;
       if (typeof section === "string") {
         const behavior =

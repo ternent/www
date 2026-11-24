@@ -7,6 +7,22 @@
   &.has-document {
     border: 1px solid var(--line);
   }
+  .example-banner {
+    display: flex;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 12px;
+    padding: 16px 24px;
+    border-bottom: 1px solid var(--line);
+    color: var(--muted);
+    font-size: 12px;
+  }
+  .example-banner a {
+    color: var(--accent);
+  }
+  .example-loading {
+    padding: 32px 24px;
+  }
   .main {
     display: block;
   }

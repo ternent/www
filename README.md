@@ -55,6 +55,7 @@ release is accepted. No npm access token is needed to install these public packa
 | `/open-source`, `/about`                                                         | Source and working together                           |
 | `/examples`                                                                      | Signed document, reader identities and privacy groups |
 | `/examples/json`, `/examples/history`, `/examples/verification`                  | Legacy redirects to standalone Inspector              |
+| `/examples/seal`                                                                 | Sign-once Seal proof verification example             |
 | `/inspect`                                                                       | Standalone JSON document inspector                    |
 | `/inspect/entries`, `/inspect/history`, `/inspect/json`, `/inspect/verification` | Read-only document views                              |
 | `/demo/identity`                                                                 | Local identity demo                                   |
@@ -103,6 +104,35 @@ freshness and other recipients' decryptability are reported separately.
 The notes example uses Ledger's common container. Earlier `concord-ledger` demo
 exports are not converted or replayed as trusted documents; their raw input remains
 inspectable. This is the same accepted alpha container break as the core libraries.
+
+## Homepage destinations
+
+Homepage calls to action open a working scenario rather than an empty tool:
+
+- Identity → `/demo/identity` for the existing create/recover/unlock flow.
+- Armour → `/inspect/entries?example=notes&focus=encrypted-payload`.
+- Ledger → `/inspect/history?example=notes&focus=latest-commit`.
+- Concord → `/examples` for editable encrypted notes.
+- Seal → `/examples/seal` for a real `@ternent/seal` file proof.
+
+The Notes inspection preset generates a separate signed document in this tab and opens
+it as a public reader. Semantic focus resolves to the generated record IDs. Tabs and
+browser navigation keep the preset; selecting another record clears its preset focus.
+Refresh/new tabs create a fresh instance of the same scenario, not the same signed bytes.
+URLs contain only known preset/view/focus names, not file contents, signing keys or
+reader reports. Unknown presets cannot load code or remote documents.
+
+The preset and the ordinary file inspector have two separate in-memory contexts.
+“Your files” returns to the current imported file; opening a homepage preset does not
+replace that file or change unfinished edits/staged events in the notes application.
+Close on the preset returns to Your files. Ordinary `/inspect` stays a file-opening tool.
+
+The Seal example signs the initial UTF-8 bytes once with a disposable local identity.
+Editing the text invalidates the displayed result until verification runs again.
+Verification calls Seal's public API and reports content-hash and proof-signature checks
+separately, without treating the included key as a trusted person. Restore never re-signs.
+Its content/proof stay in memory across navigation and clear on reload. This does not add
+Seal proof import/verification to the Ledger document inspector.
 
 ## Standalone document inspector
 

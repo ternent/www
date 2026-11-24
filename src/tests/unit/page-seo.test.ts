@@ -3,6 +3,10 @@ import { pageSeo } from "@/app/config/page-seo";
 import { sectionPaths } from "@/routes/home/navigation";
 
 describe("page metadata", () => {
+  it("gives the actual Seal proof example its own metadata", () => {
+    expect(pageSeo("/examples/seal").title).toContain("Seal");
+    expect(pageSeo("/examples/seal").link[0].href).toBe("https://ternent.dev/examples/seal");
+  });
   it("gives the standalone inspector its own canonical and title", () => {
     for (const path of [
       "/inspect",

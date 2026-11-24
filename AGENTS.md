@@ -35,6 +35,13 @@ Files stay in memory; do not upload, persist or execute their content. Preserve 
 sessions during in-app navigation. The explicit file limit is 16 MiB; JSON tree and
 history rendering are incremental. Browser and visual review remain Sam's.
 
+Homepage links must deliver their promised state on a fresh visit. The known Notes
+inspection preset is separate from user files and the editable notes session. Keep
+semantic preset/focus names in URLs, never keys, reader reports or document contents.
+Resolve generated entry IDs at runtime and retain the preset through view navigation.
+The host route owns sample loading; the file inspector must not import the notes model.
+Seal's example must use its actual proof API, distinct from Ledger verification.
+
 Run `pnpm check` before delivery. It checks formatting, lint, Vue/TypeScript, website
 unit tests, real-library runtime tests and the static/PWA build. Browser and
 accessibility walkthroughs are Sam's. Deliver changes as a draft PR; publishing the

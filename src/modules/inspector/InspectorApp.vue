@@ -1,13 +1,43 @@
 <script setup lang="ts">
 import "./workbench.css";
 import "./inspector.css";
-import { computed, nextTick, onActivated, onMounted, ref, shallowRef } from "vue";
+import { computed, nextTick, onActivated, onMounted, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import { inspectDocument, MAX_FILE_BYTES, type OpenedDocument } from "./document";
 import InspectorPanel from "./InspectorPanel.vue";
 import JsonBrowser from "./JsonBrowser.vue";
 import { short } from "./types";
-import { applyInspectionContext, takeInspection, type InspectionContext } from "./handoff";
+import {
+  applyInspectionContext,
+  takeInspection,
+  type InspectionContext,
+  type InspectionInput,
+} from "./handoff";
+
+const props = defineProps<{
+  loadExample?: () => Promise<InspectionInput>;
+  exampleLabel?: string;
+}>();
+let focusEntries: Record<string, string> = {};
+let loadingExample: Promise<void> | undefined;
+const isCurrentContext = () =>
+  /^\/inspect(?:\/|$)/.test(route.path) && !!route.query.example === !!props.loadExample;
+const viewLocation = (path: string) => ({
+  path,
+  query: props.loadExample
+    ? {
+        example: route.query.example,
+        ...(typeof route.query.focus === "string" ? { focus: route.query.focus } : {}),
+      }
+    : {},
+});
+function applyFocus() {
+  if (!isCurrentContext()) return;
+  const focus = typeof route.query.focus === "string" ? route.query.focus : "";
+  if (Object.hasOwn(focusEntries, focus)) entryId.value = focusEntries[focus]!;
+  if (props.loadExample && focus === "latest-commit")
+    commitId.value = inspection.value?.history.at(-1)?.id ?? null;
+}
 
 type View = "overview" | "entries" | "history" | "json" | "verification";
 const route = useRoute();
@@ -78,10 +108,7 @@ const size = computed(() => {
       : `${(bytes / (1024 * 1024)).toFixed(1)} MiB`;
 });
 
-async function open(
-  input: File | string | Uint8Array,
-  options?: { name: string; context?: InspectionContext; entryId?: string },
-) {
+async function open(input: File | string | Uint8Array, options?: Omit<InspectionInput, "bytes">) {
   const current = ++request;
   const wasEmpty = !opened.value;
   busy.value = true;
@@ -107,10 +134,12 @@ async function open(
     applyInspectionContext(candidate, options?.context);
     if (current !== request) return;
     opened.value = candidate;
+    focusEntries = options?.focusEntries ?? {};
     entryId.value =
       candidate.inspection?.snapshot?.entries.find((entry) => entry.id === options?.entryId)?.id ??
       candidate.inspection?.snapshot?.entries[0]?.id ??
       null;
+    applyFocus();
     commitId.value = candidate.inspection?.history.at(-1)?.id ?? null;
     search.value = "";
     entryLimit.value = 100;
@@ -126,13 +155,38 @@ async function open(
     if (current === request) busy.value = false;
   }
 }
+async function prepareExample() {
+  if (!props.loadExample || opened.value || loadingExample) return loadingExample;
+  loadingExample = (async () => {
+    busy.value = true;
+    error.value = "";
+    try {
+      const input = await props.loadExample!();
+      await open(input.bytes, input);
+    } catch (cause) {
+      error.value = cause instanceof Error ? cause.message : "Could not prepare the example.";
+    } finally {
+      busy.value = false;
+      loadingExample = undefined;
+    }
+  })();
+  return loadingExample;
+}
 function acceptHandoff() {
+  if (!isCurrentContext()) return;
+  if (props.loadExample) {
+    void prepareExample();
+    applyFocus();
+    return;
+  }
   const next = takeInspection();
   if (next) void open(next.bytes, next);
 }
+watch(() => [route.query.example, route.query.focus], applyFocus);
 onMounted(acceptHandoff);
 onActivated(acceptHandoff);
 function fileChanged(event: Event) {
+  if (props.loadExample) return;
   const input = event.target as HTMLInputElement;
   const file = input.files?.[0];
   if (file) void open(file);
@@ -140,6 +194,10 @@ function fileChanged(event: Event) {
 }
 function drop(event: DragEvent) {
   dragDepth.value = 0;
+  if (props.loadExample) {
+    error.value = "Switch to Your files to open your own document.";
+    return;
+  }
   const files = event.dataTransfer?.files;
   if (!files?.length) return;
   if (files.length !== 1) {
@@ -152,6 +210,10 @@ function enter(event: DragEvent) {
   if (event.dataTransfer?.types.includes("Files")) dragDepth.value++;
 }
 async function close() {
+  if (props.loadExample) {
+    await router.push("/inspect");
+    return;
+  }
   request++;
   opened.value = null;
   busy.value = false;
@@ -162,6 +224,18 @@ async function close() {
   await nextTick();
   chooseFile.value?.focus();
 }
+function clearFocus() {
+  if (props.loadExample && route.query.focus)
+    void router.replace({ path: route.path, query: { example: route.query.example } });
+}
+function selectListedEntry(id: string) {
+  entryId.value = id;
+  clearFocus();
+}
+function selectCommit(id: string) {
+  commitId.value = id;
+  clearFocus();
+}
 async function selectEntry(id: string) {
   entryId.value = id;
   search.value = "";
@@ -169,7 +243,10 @@ async function selectEntry(id: string) {
     100,
     (inspection.value?.snapshot?.entries.findIndex((entry) => entry.id === id) ?? 0) + 1,
   );
-  await router.push("/inspect/entries");
+  await router.push({
+    path: "/inspect/entries",
+    query: props.loadExample ? { example: route.query.example } : {},
+  });
   await nextTick();
   root.value?.querySelector<HTMLElement>(".entry-inspector h2")?.focus();
 }
@@ -242,7 +319,18 @@ async function recheck() {
       <span aria-hidden="true">↓</span><strong>Drop to inspect</strong
       ><span>Your file stays in this browser tab.</span>
     </div>
-    <section v-if="!opened" class="inspector-welcome">
+    <div v-if="exampleLabel" class="example-banner">
+      <span>{{ exampleLabel }} · generated in this tab</span>
+      <RouterLink to="/inspect">Your files ↗</RouterLink>
+    </div>
+    <section v-if="loadExample && !opened" class="inspector-welcome example-loading">
+      <h2>Preparing the example</h2>
+      <p :role="error ? 'alert' : 'status'">
+        {{ error || "Generating a signed, encrypted document locally…" }}
+      </p>
+      <button v-if="error" class="button subtle" @click="prepareExample()">Try again</button>
+    </section>
+    <section v-else-if="!opened" class="inspector-welcome">
       <div class="file-drop">
         <div class="file-glyph" aria-hidden="true">{ }</div>
         <h2>Drop a JSON file.</h2>
@@ -299,7 +387,12 @@ async function recheck() {
             </div>
           </div>
           <div class="document-actions">
-            <button class="button subtle" :disabled="busy" @click="fileInput?.click()">
+            <button
+              v-if="!loadExample"
+              class="button subtle"
+              :disabled="busy"
+              @click="fileInput?.click()"
+            >
               Open file</button
             ><button
               class="button subtle download-original"
@@ -311,8 +404,8 @@ async function recheck() {
               ><span aria-hidden="true">↗</span></button
             ><button
               class="close-document"
-              aria-label="Close document"
-              title="Close document"
+              :aria-label="loadExample ? 'Return to your files' : 'Close document'"
+              :title="loadExample ? 'Return to your files' : 'Close document'"
               @click="close"
             >
               ×
@@ -324,7 +417,7 @@ async function recheck() {
             <RouterLink
               v-for="tab in tabs"
               :key="tab.id"
-              :to="tab.path"
+              :to="viewLocation(tab.path)"
               :class="{ active: view === tab.id }"
               :aria-current="view === tab.id ? 'page' : undefined"
               >{{ tab.label }}</RouterLink
@@ -359,7 +452,9 @@ async function recheck() {
                 }}
               </p>
             </div>
-            <RouterLink v-if="report" to="/inspect/verification">View checks ↗</RouterLink>
+            <RouterLink v-if="report" :to="viewLocation('/inspect/verification')"
+              >View checks ↗</RouterLink
+            >
           </div>
           <section v-if="report" class="document-details" aria-label="Document information">
             <h2>File details</h2>
@@ -391,7 +486,9 @@ async function recheck() {
           <JsonBrowser v-if="opened.parsed.ok" :value="opened.parsed.value" />
           <div v-else class="invalid-json">
             <p>The original source is still available for inspection.</p>
-            <RouterLink class="button subtle" to="/inspect/json">Open source</RouterLink>
+            <RouterLink class="button subtle" :to="viewLocation('/inspect/json')"
+              >Open source</RouterLink
+            >
           </div>
           <details class="demo-help inspection-help">
             <summary>About inspection <span aria-hidden="true">?</span></summary>
@@ -400,14 +497,19 @@ async function recheck() {
               should trust or whether this is the newest copy.
             </p>
             <p>
-              No application model, system implementation or private key is loaded. Concord
-              declarations and public records stay inspectable. Encrypted contents stay protected.
+              Opening a file never loads an application model, system implementation or private key
+              from its contents. Concord declarations and public records stay inspectable. Encrypted
+              contents stay protected.
             </p>
             <p v-if="opened.contextLabel">
               This snapshot includes the selected example reader's inspection. Opening a file
               separately uses public inspection and does not import that context.
             </p>
-            <p>
+            <p v-if="loadExample">
+              This generated example stays in memory until you reload. Your own file is kept
+              separately.
+            </p>
+            <p v-else>
               Your file stays in this tab, including when switching tools. Close it or reload to
               clear it.
             </p>
@@ -434,7 +536,7 @@ async function recheck() {
                 :key="entry.id"
                 class="entry-row"
                 :class="{ selected: entryId === entry.id }"
-                @click="entryId = entry.id"
+                @click="selectListedEntry(entry.id)"
               >
                 <span class="entry-copy"
                   ><strong>{{ entry.subject.kind }}</strong
@@ -473,7 +575,7 @@ async function recheck() {
           :raw="opened.source"
           :busy="busy"
           @select-entry="selectEntry"
-          @select-commit="commitId = $event"
+          @select-commit="selectCommit"
           @copy="copy"
           @verify="recheck"
         />
@@ -503,7 +605,9 @@ async function recheck() {
                 : opened.parsed.error
             }}
           </p>
-          <RouterLink class="button subtle" to="/inspect/json">Inspect source</RouterLink>
+          <RouterLink class="button subtle" :to="viewLocation('/inspect/json')"
+            >Inspect source</RouterLink
+          >
         </section>
 
         <div class="workspace-status">

@@ -95,6 +95,14 @@ describe("RouteHome", () => {
       expect(wrapper.find("#examples").exists()).toBe(false);
       expect(wrapper.find('a[href="/examples"]').exists()).toBe(true);
       expect(wrapper.find("#developers").exists()).toBe(false);
+      for (const [section, target] of Object.entries({
+        identity: "/demo/identity",
+        encryption: "/inspect/entries?example=notes&focus=encrypted-payload",
+        verification: "/examples/seal",
+        history: "/inspect/history?example=notes&focus=latest-commit",
+        concord: "/examples",
+      }))
+        expect(wrapper.get(`#${section} .text-link`).attributes("href")).toBe(target);
       const diagramLinks = wrapper.get('nav[aria-label="Runtime building blocks"]').findAll("a");
       expect(diagramLinks).toHaveLength(5);
       for (const link of diagramLinks) {
