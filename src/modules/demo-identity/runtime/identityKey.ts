@@ -88,7 +88,7 @@ function decodeBase58(input: string): Uint8Array {
     leadingZeros += 1;
   }
 
-  return new Uint8Array([...new Array(leadingZeros).fill(0), ...bytes]);
+  return new Uint8Array([...Array.from({ length: leadingZeros }, () => 0), ...bytes]);
 }
 
 function encodeBase58(bytes: Uint8Array): string {

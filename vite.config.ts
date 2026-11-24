@@ -1,24 +1,23 @@
 import { resolve } from "node:path";
-import { defineConfig, type Plugin } from "vite";
+import { defineConfig, type Plugin } from "vite-plus";
 import vue from "@vitejs/plugin-vue";
 import tailwindcss from "@tailwindcss/vite";
 import { VitePWA } from "vite-plugin-pwa";
-import { appConfig, appSeoConfig } from "./src/app/config/app.generated";
+import { appConfig, appSeoConfig } from "./src/app/config/app.config";
 import { sectionPaths, subdomainPaths } from "./src/routes/home/navigation";
 
 const storyPaths = Object.fromEntries(
-  Object.entries(sectionPaths).filter(([section]) => section !== "playground")
+  Object.entries(sectionPaths)
+    .filter(([section]) => section !== "examples")
     .map(([section, path]) => [path, section]),
 );
 
 const appThemeData = `${appConfig.themeName}-${appConfig.defaultThemeMode}`;
 const themeStorageKey = `${appConfig.appId}/theme-mode`;
 const themeBootstrapScript = `(function(){var storageKey=${JSON.stringify(
-  themeStorageKey
-)};var defaultMode=${JSON.stringify(
-  appConfig.defaultThemeMode
-)};var themePrefix=${JSON.stringify(
-  appConfig.themeName
+  themeStorageKey,
+)};var defaultMode=${JSON.stringify(appConfig.defaultThemeMode)};var themePrefix=${JSON.stringify(
+  appConfig.themeName,
 )};var root=document.documentElement;var mode=defaultMode;root.dataset.themePrefix=themePrefix;root.dataset.themeStorageKey=storageKey;try{var stored=window.localStorage.getItem(storageKey);if(stored==="dark"||stored==="light"){mode=stored;}else if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}catch{if(typeof window.matchMedia==="function"){mode=window.matchMedia("(prefers-color-scheme: dark)").matches?"dark":"light";}}root.setAttribute("data-theme",themePrefix+"-"+mode);}());`;
 
 function createIndexHtmlTransformPlugin() {
@@ -73,7 +72,9 @@ function createWebManifestPlugin(): Plugin {
   let ssr = false;
   return {
     name: "ternent-web-manifest",
-    configResolved(config) { ssr = Boolean(config.build.ssr); },
+    configResolved(config) {
+      ssr = Boolean(config.build.ssr);
+    },
     configureServer(server) {
       server.middlewares.use((request, response, next) => {
         if (request.url?.split("?")[0] !== "/manifest.webmanifest") return next();
@@ -89,16 +90,7 @@ function createWebManifestPlugin(): Plugin {
 
 export default defineConfig({
   resolve: {
-    alias: [
-      {
-        find: /^@ternent\/seal-cli(?:\/proof)?$/,
-        replacement: resolve(
-          __dirname,
-          "node_modules/@ternent/seal-cli/dist/proof.js"
-        ),
-      },
-      { find: "@", replacement: resolve(__dirname, "./src") },
-    ],
+    alias: { "@": resolve(import.meta.dirname, "./src") },
   },
   plugins: [
     vue(),

@@ -1,86 +1,6 @@
 <script setup lang="ts">
-import { shallowRef } from "vue";
 import { useThemeMode } from "@/modules/ui";
-
-const props = defineProps({
-  size: {
-    type: String,
-    default: "md",
-    validator: (value) => ["xs", "sm", "md", "lg"].includes(value),
-  },
-  showDropdown: {
-    type: Boolean,
-    default: false,
-  },
-});
-
-const { mode } = useThemeMode();
-
-function getSystemMode() {
-  if (typeof window !== "undefined" && typeof window.matchMedia === "function") {
-    return window.matchMedia("(prefers-color-scheme: dark)").matches ? "dark" : "light";
-  }
-
-  return "light";
-}
-
-const internalMode = shallowRef(getSystemMode());
-
-function getDocumentThemeAttribute() {
-  if (typeof document === "undefined") return "";
-  return document.documentElement.getAttribute("data-theme") || "";
-}
-
-function getThemePrefix() {
-  if (typeof document === "undefined") return "";
-
-  const root = document.documentElement;
-  if (root.dataset.themePrefix) return root.dataset.themePrefix;
-
-  const currentTheme = getDocumentThemeAttribute();
-  const match = currentTheme.match(/^(.*)-(light|dark)$/);
-  return match?.[1] || "";
-}
-
-function getThemeStorageKey() {
-  if (typeof document === "undefined") return "";
-  return document.documentElement.dataset.themeStorageKey || "";
-}
-
-function getDocumentMode() {
-  const currentTheme = getDocumentThemeAttribute();
-  if (currentTheme.endsWith("-dark")) return "dark";
-  if (currentTheme.endsWith("-light")) return "light";
-  return getSystemMode();
-}
-
-internalMode.value = getDocumentMode();
-
-function persistDocumentMode(nextMode) {
-  const storageKey = getThemeStorageKey();
-  if (!storageKey || typeof window === "undefined") return;
-
-  try {
-    window.localStorage.setItem(storageKey, nextMode);
-  } catch {}
-}
-
-function applyDocumentMode(nextMode) {
-  if (typeof document === "undefined") return;
-
-  const prefix = getThemePrefix();
-  if (prefix) {
-    document.documentElement.setAttribute("data-theme", `${prefix}-${nextMode}`);
-  }
-
-  persistDocumentMode(nextMode);
-  internalMode.value = nextMode;
-}
-
-function toggleMode() {
-  mode.value = mode.value === "dark" ? "light" : "dark";
-  applyDocumentMode(mode.value);
-}
+const { mode, toggleTheme } = useThemeMode();
 </script>
 
 <template>
@@ -88,7 +8,7 @@ function toggleMode() {
     type="button"
     class="theme-mode-toggle w-10 h-10 p-2 inline-flex items-center justify-center rounded-full border border-[var(--ui-border)] bg-[var(--ui-surface)] text-[var(--ui-fg)] transition hover:bg-[var(--ui-surface-hover)] focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-[var(--ui-ring)]"
     :aria-label="mode === 'dark' ? 'Switch to light mode' : 'Switch to dark mode'"
-    @click="toggleMode"
+    @click="toggleTheme"
   >
     <svg
       aria-hidden="true"

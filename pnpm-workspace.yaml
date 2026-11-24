@@ -1,0 +1,10 @@
+overrides:
+  vite@*: npm:@voidzero-dev/vite-plus-core@8.3.8000
+  vitest@*: 5.1.0
+
+minimumReleaseAgeExclude:
+  - "@ternent/armour@0.3.0-alpha.1"
+  - "@ternent/identity@0.6.0-alpha.1"
+  - "@ternent/concord@0.3.0-alpha.1"
+  - "@ternent/ledger@0.2.0-alpha.1"
+  - "@ternent/seal@0.5.0-alpha.1"

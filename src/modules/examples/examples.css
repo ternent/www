@@ -1,0 +1,132 @@
+.examples-page .examples-workbench {
+  border: 1px solid var(--line);
+  border-radius: 12px;
+  grid-template-columns: 188px minmax(0, 1fr);
+
+  .sidebar {
+    border-radius: 12px 0 0 12px;
+    overflow: visible;
+  }
+  .content-grid,
+  .notes-panel,
+  .editor-panel {
+    overflow: visible;
+  }
+  .intro {
+    flex-wrap: wrap;
+  }
+  .document-title,
+  .document-title > div {
+    min-width: 0;
+  }
+  .document-title {
+    flex: 1;
+  }
+  .document-title h2 {
+    font-size: 18px;
+  }
+  .document-glyph {
+    flex-shrink: 0;
+  }
+  .document-actions {
+    flex-wrap: wrap;
+  }
+  .status-strip {
+    border-radius: 0 0 12px;
+  }
+
+  .content-grid {
+    grid-template-columns: minmax(210px, 0.7fr) minmax(0, 1.3fr);
+  }
+  .editor-panel {
+    padding: 30px 24px;
+  }
+  .note-editor {
+    max-width: 900px;
+    margin-inline: auto;
+  }
+  .note-editor textarea {
+    min-height: 260px;
+  }
+  .commit-strip {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    flex-wrap: wrap;
+    padding: 12px 26px;
+    border-top: 1px solid var(--line);
+    background: var(--ui-surface);
+    flex-shrink: 0;
+  }
+  .auto-commit {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 12px;
+    color: var(--ink);
+  }
+  .auto-commit input {
+    width: 14px;
+    height: 14px;
+    padding: 0;
+    margin: 0;
+    accent-color: var(--accent);
+  }
+  .commit-summary {
+    font-size: 11px;
+    color: var(--muted);
+    flex: 1;
+  }
+  .commit-strip .button {
+    font-size: 11px;
+    min-height: 32px;
+  }
+  @media (max-width: 1000px) {
+    .content-grid {
+      grid-template-columns: minmax(180px, 0.7fr) minmax(0, 1.3fr);
+    }
+    .editor-panel {
+      padding: 24px 20px;
+    }
+    .document-title .small {
+      display: none;
+    }
+  }
+  @media (max-width: 800px) {
+    .sidebar {
+      border-radius: 12px 12px 0 0;
+    }
+    .status-strip {
+      border-radius: 0 0 12px 12px;
+    }
+    .editor-panel {
+      padding: 26px;
+    }
+  }
+  @media (max-width: 600px) {
+    .content-grid {
+      display: flex;
+      flex-direction: column;
+    }
+    .note-editor textarea {
+      min-height: 200px;
+    }
+    .document-title {
+      flex-basis: 100%;
+    }
+    .document-actions .button {
+      padding-inline: 9px;
+    }
+    .commit-strip {
+      gap: 12px;
+      padding: 14px 18px;
+    }
+    .commit-summary {
+      text-align: right;
+    }
+    .commit-strip .button {
+      flex: 1;
+      min-height: 40px;
+    }
+  }
+}

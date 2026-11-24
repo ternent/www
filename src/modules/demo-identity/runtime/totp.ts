@@ -84,12 +84,12 @@ function toCounterBytes(counter: number): Uint8Array {
 async function hmacSha1(secret: Uint8Array, message: Uint8Array): Promise<Uint8Array> {
   const key = await assertCryptoSubtle().importKey(
     "raw",
-    secret,
+    new Uint8Array(secret),
     { name: "HMAC", hash: "SHA-1" },
     false,
     ["sign"],
   );
-  const digest = await assertCryptoSubtle().sign("HMAC", key, message);
+  const digest = await assertCryptoSubtle().sign("HMAC", key, new Uint8Array(message));
   return new Uint8Array(digest);
 }
 

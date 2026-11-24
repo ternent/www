@@ -6,9 +6,7 @@ import { consumeSectionScroll, legacySectionPath } from "./routes/home/navigatio
 import registerSW from "./utils/registerSW";
 import { pageSeo } from "./app/config/page-seo";
 
-import "@ternent/ui/styles.css";
-import "@/app/config/theme.generated";
-import "@/app/config/suite-themes";
+import "./themes.css";
 import "./style.css";
 import "./story.css";
 
@@ -19,6 +17,14 @@ export const createApp = ViteSSG(
     scrollBehavior(to, from, savedPosition) {
       if (consumeSectionScroll(to.fullPath)) return false;
       if (savedPosition) return { ...savedPosition, behavior: "auto" };
+      const tool = (path: string) => /^\/(examples|inspect)(?:\/|$)/.exec(path)?.[1];
+      if (
+        tool(to.path) &&
+        tool(to.path) === tool(from.path) &&
+        to.query.example === from.query.example &&
+        (tool(to.path) === "inspect" || to.path === from.path)
+      )
+        return false;
       const section = to.meta.storySection;
       if (typeof section === "string") {
         const behavior =
@@ -37,7 +43,7 @@ export const createApp = ViteSSG(
       if (!failure) metadata?.patch(pageSeo(to.path));
     });
     router.beforeEach((to) => {
-      if ((to.meta.storySection || to.path === "/playground") && to.hash) {
+      if ((to.meta.storySection || to.path === "/examples") && to.hash) {
         return {
           path: legacySectionPath(to.hash) ?? to.path,
           query: to.query,

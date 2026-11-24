@@ -15,4 +15,10 @@ node_modules
 *.cache
 
 # Ignore Vite's cache directory
-.vite   
+.vite
+
+# Local verification outputs
+coverage/
+playwright-report/
+test-results/
+.vite-ssg-temp/

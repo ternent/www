@@ -49,7 +49,7 @@ const EccMap: Record<QrErrorCorrection, EccLevel> = {
 };
 
 const NUMERIC_REGEX = /^[0-9]*$/;
-const ALPHANUMERIC_REGEX = /^[A-Z0-9 $%*+.\/:-]*$/;
+const ALPHANUMERIC_REGEX = /^[A-Z0-9 $%*+./:-]*$/;
 const ALPHANUMERIC_CHARSET = "0123456789ABCDEFGHIJKLMNOPQRSTUVWXYZ $%*+-./:";
 
 const MIN_VERSION = 1;
@@ -578,7 +578,7 @@ function makeNumeric(digits: string): QrSegment {
   }
 
   const bb: number[] = [];
-  for (let i = 0; i < digits.length; ) {
+  for (let i = 0; i < digits.length;) {
     const n = Math.min(digits.length - i, 3);
     appendBits(Number.parseInt(digits.slice(i, i + n), 10), n * 3 + 1, bb);
     i += n;

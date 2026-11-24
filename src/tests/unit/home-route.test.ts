@@ -4,7 +4,11 @@ import { describe, expect, it, vi } from "vitest";
 import { createMemoryHistory, createRouter, RouterView } from "vue-router";
 import RouteHome from "@/routes/home/RouteHome.vue";
 import { routes } from "@/routes";
-import { consumeSectionScroll, replaceVisibleSection, sectionPaths } from "@/routes/home/navigation";
+import {
+  consumeSectionScroll,
+  replaceVisibleSection,
+  sectionPaths,
+} from "@/routes/home/navigation";
 import { useThemeMode } from "@/modules/ui";
 
 describe("RouteHome", () => {
@@ -33,10 +37,13 @@ describe("RouteHome", () => {
   it("fades section content without shifting its text", () => {
     let onIntersection: IntersectionObserverCallback | undefined;
     const observer = { observe: vi.fn(), unobserve: vi.fn(), disconnect: vi.fn() };
-    vi.stubGlobal("IntersectionObserver", vi.fn(function (callback: IntersectionObserverCallback) {
-      onIntersection = callback;
-      return observer;
-    }));
+    vi.stubGlobal(
+      "IntersectionObserver",
+      vi.fn(function (callback: IntersectionObserverCallback) {
+        onIntersection = callback;
+        return observer;
+      }),
+    );
     const wrapper = shallowMount(RouteHome, {
       global: {
         stubs: {
@@ -47,7 +54,10 @@ describe("RouteHome", () => {
 
     try {
       const content = wrapper.get("#concord > div").element;
-      const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({ cancel: vi.fn(), onfinish: null }));
+      const animate = vi.fn((_frames: Keyframe[], _options: KeyframeAnimationOptions) => ({
+        cancel: vi.fn(),
+        onfinish: null,
+      }));
       Object.defineProperty(content, "animate", { value: animate });
       onIntersection?.(
         [{ target: content, isIntersecting: true } as IntersectionObserverEntry],
@@ -63,14 +73,13 @@ describe("RouteHome", () => {
     }
   });
 
-  it("keeps the story readable without the playground and switches package themes", async () => {
+  it("keeps examples on their own route and switches package themes", async () => {
     const theme = useThemeMode();
     const previousMode = theme.mode.value;
     theme.setTheme("dark");
     const wrapper = shallowMount(RouteHome, {
       global: {
         stubs: {
-          LedgerPlayground: true,
           ArchitectureMap: false,
           RouterLink: { props: ["to"], template: '<a :href="to"><slot /></a>' },
         },
@@ -83,10 +92,17 @@ describe("RouteHome", () => {
       for (const id of ["overview", "idea", "how-it-works", "open-source", "about"]) {
         expect(wrapper.find(`#${id}`).exists()).toBe(true);
       }
-      expect(wrapper.find("#playground").exists()).toBe(false);
-      expect(wrapper.find("ledger-playground-stub").exists()).toBe(false);
-      expect(wrapper.find('a[href="/playground"]').exists()).toBe(true);
+      expect(wrapper.find("#examples").exists()).toBe(false);
+      expect(wrapper.find('a[href="/examples"]').exists()).toBe(true);
       expect(wrapper.find("#developers").exists()).toBe(false);
+      for (const [section, target] of Object.entries({
+        identity: "/demo/identity",
+        encryption: "/inspect/entries?example=notes&focus=encrypted-payload",
+        verification: "/examples/seal",
+        history: "/inspect/history?example=notes&focus=latest-commit",
+        concord: "/examples",
+      }))
+        expect(wrapper.get(`#${section} .text-link`).attributes("href")).toBe(target);
       const diagramLinks = wrapper.get('nav[aria-label="Runtime building blocks"]').findAll("a");
       expect(diagramLinks).toHaveLength(5);
       for (const link of diagramLinks) {

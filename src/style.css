@@ -1,8 +1,6 @@
 @layer theme, base, components, utilities;
 @import "tailwindcss/theme.css" layer(theme);
 @import "tailwindcss/utilities.css" layer(utilities);
-@source "../node_modules/@ternent/ui/dist/primitives.js";
-@source "../node_modules/@ternent/ui/dist/patterns.js";
 
 @custom-variant dark (&:where([data-theme$="-dark"], [data-theme$="-dark"] *));
 @custom-variant light (&:where([data-theme$="-light"], [data-theme$="-light"] *));
@@ -38,4 +36,61 @@ body {
     ),
     var(--ui-bg);
   color: var(--ui-fg);
+}
+
+/* Native presentation for the local identity demo. */
+.identity-flow {
+  padding: 28px;
+  border: 1px solid var(--ui-border);
+  border-radius: 16px;
+  background: var(--ui-bg);
+}
+.identity-return {
+  margin-bottom: 24px;
+}
+.identity-panel {
+  padding: 20px;
+  border: 1px solid var(--ui-border);
+  border-radius: 12px;
+  background: var(--ui-surface);
+}
+.identity-input {
+  width: 100%;
+  padding: 12px 14px;
+  border: 1px solid var(--ui-border);
+  border-radius: 8px;
+  background: var(--ui-bg);
+  color: var(--ui-fg);
+  font: inherit;
+}
+.identity-input:focus-visible {
+  outline: 2px solid var(--ui-primary);
+  outline-offset: 3px;
+}
+.identity-checkbox {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  font-size: 14px;
+  line-height: 1.6;
+}
+.identity-checkbox input {
+  margin-top: 5px;
+  accent-color: var(--ui-primary);
+}
+.identity-badge {
+  display: inline-block;
+  padding: 3px 7px;
+  border: 1px solid var(--ui-border);
+  border-radius: 5px;
+  font-size: 12px;
+}
+.identity-handle {
+  display: grid;
+  gap: 8px;
+  overflow-wrap: anywhere;
+}
+.identity-handle code {
+  font-size: 13px;
+  color: var(--ui-fg-muted);
 }

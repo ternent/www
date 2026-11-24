@@ -9,8 +9,10 @@ const { mode } = useThemeMode();
 const mounted = ref(false);
 const story = ref<HTMLElement | null>(null);
 useStoryMotion(story);
-const themeMode = computed(() => mounted.value ? mode.value : appConfig.defaultThemeMode);
-onMounted(() => { mounted.value = true; });
+const themeMode = computed(() => (mounted.value ? mode.value : appConfig.defaultThemeMode));
+onMounted(() => {
+  mounted.value = true;
+});
 const packages = [
   {
     id: "identity",
@@ -21,8 +23,8 @@ const packages = [
     text: "Create a signing identity locally. Its public key lets other people check your signatures. Its private material lets you sign and derive encryption keys. You can export it and recover it with a mnemonic.",
     detail:
       "The stable identity model uses Ed25519 signatures, with derived X25519 and age-compatible encryption keys. A key identifies a signer. Connecting that signer to a person still needs a trusted introduction.",
-    action: "Explore the demo identity",
-    target: "/playground",
+    action: "Create or recover an identity",
+    target: "/demo/identity",
     source: "identity",
   },
   {
@@ -35,21 +37,21 @@ const packages = [
     detail:
       "Armour provides age-compatible encryption for identities, recipients and passphrases. Signatures and public metadata remain visible. Encryption protects the payload rather than hiding the existence of the document.",
     action: "Inspect the encrypted payload",
-    target: "/playground/json",
+    target: "/inspect/entries?example=notes&focus=encrypted-payload",
     source: "armour",
   },
   {
     id: "verification",
     name: "Seal",
     theme: "proof",
-    pkg: "@ternent/seal-cli",
+    pkg: "@ternent/seal",
     title: "Proof that travels with the file.",
     text: "A signature lets someone check whether content matches what a particular key signed. Seal packages that proof so it can travel with a file, a release or an exported history.",
     detail:
       "The same proof model is available through JavaScript, a command-line tool and a GitHub Action. Verification needs the content and public proof. It does not need the private signing key.",
-    action: "Try changing a signed record",
-    target: "/playground/verification",
-    source: "seal-cli",
+    action: "Verify a signed document",
+    target: "/examples/seal",
+    source: "seal",
   },
   {
     id: "history",
@@ -61,7 +63,7 @@ const packages = [
     detail:
       "Ledger handles append, commit, verification and replay. Concord adds application commands and replay plugins on top. Deterministic replay depends on using the same rules, and encrypted content requires the matching decryption capability.",
     action: "Follow the commit history",
-    target: "/playground/history",
+    target: "/inspect/history?example=notes&focus=latest-commit",
     source: "ledger",
   },
 ];
@@ -70,13 +72,14 @@ const packages = [
   <main id="main-content" ref="story" class="story" tabindex="-1">
     <section id="overview" class="story-hero" tabindex="-1">
       <p class="eyebrow">ternent.dev</p>
-      <h1 tabindex="-1"><span class="hero-line">Software built on </span><em class="hero-line">signed history.</em></h1>
+      <h1 tabindex="-1">
+        <span class="hero-line">Software built on </span><em class="hero-line">signed history.</em>
+      </h1>
       <p class="hero-description">
-        Your data, your keys, your copy.<br />A different foundation for
-        applications.
+        Your data, your keys, your copy.<br />A different foundation for applications.
       </p>
       <div class="hero-actions">
-        <RouterLink class="primary button" to="/playground">Try it in your browser ↘</RouterLink
+        <RouterLink class="primary button" to="/examples">Try it in your browser ↘</RouterLink
         ><RouterLink to="/idea">Start with the idea ↓</RouterLink>
       </div>
       <p class="hero-footnote">
@@ -90,19 +93,17 @@ const packages = [
       </div>
       <div class="prose">
         <p>
-          Most of the software we use keeps our data in someone else's database.
-          Our access, our history and our ability to leave depend on that
-          service.
+          Most of the software we use keeps our data in someone else's database. Our access, our
+          history and our ability to leave depend on that service.
         </p>
         <p>
-          This stack takes a different approach. Applications work with a
-          portable history of signed changes. Sensitive content is encrypted on
-          your device. You keep a copy that another application can verify and
-          rebuild.
+          This stack takes a different approach. Applications work with a portable history of signed
+          changes. Sensitive content is encrypted on your device. You keep a copy that another
+          application can verify and rebuild.
         </p>
         <p>
-          Services can still help store and move that data. They need much less
-          access to what's inside it.
+          Services can still help store and move that data. They need much less access to what's
+          inside it.
         </p>
       </div>
     </section>
@@ -114,14 +115,13 @@ const packages = [
         </div>
         <div class="prose">
           <p>
-            An application's current state tells you where things stand. Its history
-            tells you how they got there.
+            An application's current state tells you where things stand. Its history tells you how
+            they got there.
           </p>
           <p>
-            Record changes in a signed, verifiable history, and that history becomes
-            something you can keep, inspect and use to rebuild the application's
-            state. Sensitive content can stay encrypted, readable only with the
-            matching keys.
+            Record changes in a signed, verifiable history, and that history becomes something you
+            can keep, inspect and use to rebuild the application's state. Sensitive content can stay
+            encrypted, readable only with the matching keys.
           </p>
         </div>
       </header>
@@ -166,45 +166,42 @@ const packages = [
         <details>
           <summary>Developer details</summary>
           <p>
-            <code>{{ item.pkg }}</code> is independently usable. See the package
-            README for its published API and supported formats.
+            <code>{{ item.pkg }}</code> is independently usable. See the package README for its
+            published API and supported formats.
           </p>
           <div class="actions">
-            <a
-              :href="`https://www.npmjs.com/package/${item.pkg}?activeTab=readme`"
+            <a :href="`https://www.npmjs.com/package/${item.pkg}?activeTab=readme`"
               >Published package ↗</a
-            ><a
-              :href="`https://github.com/ternent/core/tree/main/packages/${item.source}`"
+            ><a :href="`https://github.com/ternent/core/tree/main/packages/${item.source}`"
               >Source on GitHub ↗</a
             >
           </div>
         </details>
       </div>
     </section>
-    <section id="concord" class="story-section concept-section" :data-theme="`concord-${themeMode}`">
+    <section
+      id="concord"
+      class="story-section concept-section"
+      :data-theme="`concord-${themeMode}`"
+    >
       <div>
         <p class="eyebrow">Concord</p>
         <h2>Bring the pieces into an application.</h2>
       </div>
       <div class="prose">
         <p>
-          Concord connects domain commands, commit boundaries and replay
-          plugins. Your application dispatches domain commands and queries
-          state derived from verified history.
+          Concord connects domain commands, commit boundaries and replay plugins. Your application
+          dispatches domain commands and queries state derived from verified history.
         </p>
         <p>
-          Identity supplies the keys. Armour encrypts content. Seal supplies
-          portable proofs. Ledger records and replays the history. Concord
-          coordinates the application.
+          Identity supplies the keys. Armour encrypts content. Seal supplies portable proofs. Ledger
+          records and replays the history. Concord coordinates the application.
         </p>
         <p>
-          The runtime is being rewritten. The example uses the published
-          Concord command and replay API, backed by Ledger.
+          The example runs the published alpha packages, using Concord commands and replay on
+          Ledger's signed history.
         </p>
-        <a
-          href="https://www.npmjs.com/package/@ternent/concord?activeTab=readme"
-          >Explore the published Concord package ↗</a
-        >
+        <RouterLink class="text-link" to="/examples">Try the encrypted notes example ↗</RouterLink>
       </div>
     </section>
     <section id="open-source" class="story-section concept-section">
@@ -214,23 +211,17 @@ const packages = [
       </div>
       <div class="prose">
         <p>
-          The libraries and examples are open source. Parts of the stack are
-          currently being rewritten, so published packages and their READMEs are
-          the starting point for stable APIs. Main branches also contain work in
-          progress.
+          The libraries and examples are open source. This site uses the published alpha packages.
+          Their READMEs describe the current APIs; main branches can contain work in progress.
         </p>
         <div class="source-links">
           <a href="https://github.com/ternent/core"
-            ><strong>ternent/core ↗</strong
-            ><span>Libraries and the current rewrite</span></a
+            ><strong>ternent/core ↗</strong><span>The five core libraries</span></a
           ><a href="https://github.com/ternent/www"
-            ><strong>ternent/www ↗</strong
-            ><span>This website and examples</span></a
+            ><strong>ternent/www ↗</strong><span>This website and examples</span></a
           ><a href="https://github.com/samternent/home"
             ><strong>samternent/home ↗</strong
-            ><span
-              >Earlier applications, experiments and implementations</span
-            ></a
+            ><span>Earlier applications, experiments and implementations</span></a
           >
         </div>
       </div>
@@ -238,10 +229,7 @@ const packages = [
     <section id="about" class="story-section about-section">
       <p class="eyebrow">Work with the architecture</p>
       <h2>Build software around<br />data people can own.</h2>
-      <p>
-        Discuss an integration, explore the libraries or contribute to the
-        open-source stack.
-      </p>
+      <p>Discuss an integration, explore the libraries or contribute to the open-source stack.</p>
       <a class="text-link" href="mailto:sam@ternent.dev">sam@ternent.dev ↗</a>
     </section>
   </main>
@@ -277,7 +265,9 @@ const packages = [
   display: block;
   margin-bottom: 18px;
   color: var(--ui-secondary);
-  font: 12px/1.4 ui-monospace, monospace;
+  font:
+    12px/1.4 ui-monospace,
+    monospace;
 }
 .foundation-section .flow p {
   margin: 12px 0 0;
@@ -299,11 +289,20 @@ const packages = [
   margin-top: var(--space-block);
 }
 @media (max-width: 900px) {
-  .foundation-section .flow { gap: 24px; }
+  .foundation-section .flow {
+    gap: 24px;
+  }
 }
 @media (max-width: 650px) {
-  .foundation-intro { grid-template-columns: 1fr; gap: 32px; }
-  .foundation-intro h2 { max-width: none; }
-  .foundation-section .flow { gap: 32px 20px; }
+  .foundation-intro {
+    grid-template-columns: 1fr;
+    gap: 32px;
+  }
+  .foundation-intro h2 {
+    max-width: none;
+  }
+  .foundation-section .flow {
+    gap: 32px 20px;
+  }
 }
 </style>

@@ -1,5 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">
   <url><loc>https://ternent.dev/</loc></url>
-  <url><loc>https://ternent.dev/playground</loc></url>
+  <url><loc>https://ternent.dev/examples</loc></url>
+  <url><loc>https://ternent.dev/examples/seal</loc></url>
+  <url><loc>https://ternent.dev/inspect</loc></url>
 </urlset>
