@@ -134,7 +134,7 @@ stays encrypted; public metadata and original stored records remain available. L
 or other JSON formats get generic inspection with no signature-verification claim.
 
 `src/modules/inspector` owns file inspection and shared record/history/source/
-verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both tools share the record presentation styles, ToolPage layout and standard site header and footer. Tool links live in context and in the footer. Meaningful tests cover real signed inputs, foreign models,
+verification presentation. Examples can supply their existing reader inspection for the exact matching verified document/head. A stale, invalid or unrelated report is not applied. The Inspector labels supplied snapshot context and never puts it into the exported file. Independently opened files use public inspection. The tool exposes no mutation controls. Both tools share the record presentation styles, ToolPage layout and standard site header and footer. The header Tools menu links to Examples and Document inspector on every page, with contextual and footer links retained. Meaningful tests cover real signed inputs, foreign models,
 tampering, duplicate keys, source/byte preservation, escaped content, failed and racing
 file opens, route navigation and preservation of unfinished example work.
 

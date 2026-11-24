@@ -2,6 +2,7 @@
 import { computed, onMounted, onBeforeUnmount, nextTick, ref } from "vue";
 import { useRoute, useRouter } from "vue-router";
 import Logo from "@/components/BrandLogo.vue";
+import HeaderTools from "@/components/HeaderTools.vue";
 import {
   sectionPaths,
   isStorySection,
@@ -182,6 +183,7 @@ onBeforeUnmount(() => {
           :aria-current="isActive(id) ? 'location' : undefined"
           >{{ label }}</RouterLink
         >
+        <HeaderTools @navigate="menuOpen = false" />
         <a class="github-link" href="https://github.com/ternent"
           >GitHub <span aria-hidden="true">↗</span></a
         >

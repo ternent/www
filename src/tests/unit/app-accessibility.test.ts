@@ -65,6 +65,30 @@ describe("site keyboard navigation", () => {
     expect(document.activeElement).toBe(wrapper.get(".mobile-menu").element);
   });
 
+  it("opens tool navigation and returns focus to Tools on Escape", async () => {
+    const { wrapper } = await setup();
+    const summary = wrapper.get<HTMLElement>(".header-tools summary");
+    await summary.trigger("click");
+    expect(wrapper.get<HTMLDetailsElement>(".header-tools").element.open).toBe(true);
+    const inspector = wrapper.get<HTMLAnchorElement>('.header-tools a[href="/inspect"]');
+    inspector.element.focus();
+    await inspector.trigger("keydown", { key: "Escape" });
+    expect(wrapper.get<HTMLDetailsElement>(".header-tools").element.open).toBe(false);
+    expect(document.activeElement).toBe(summary.element);
+  });
+
+  it("closes both mobile and tool navigation after choosing a destination", async () => {
+    const { wrapper, router } = await setup();
+    await wrapper.get(".mobile-menu").trigger("click");
+    await wrapper.get(".header-tools summary").trigger("click");
+    await wrapper.get('.header-tools a[href="/examples"]').trigger("click");
+    await flushPromises();
+    expect(router.currentRoute.value.path).toBe("/examples");
+    expect(wrapper.get<HTMLDetailsElement>(".header-tools").element.open).toBe(false);
+    expect(wrapper.get(".mobile-menu").attributes("aria-expanded")).toBe("false");
+    expect(document.activeElement).toBe(wrapper.get("main h1").element);
+  });
+
   it("focuses the destination on navigation without stealing focus during scroll updates", async () => {
     const { wrapper, router } = await setup();
     const menu = wrapper.get(".mobile-menu").element as HTMLButtonElement;

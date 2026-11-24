@@ -25,7 +25,8 @@ reader context in the file. Keep longer explanations in contextual help.
 header, footer and content width. Keep file details in Overview and document views
 in one contained workspace with normal page scrolling; only source previews need
 bounded scrolling. Examples and Inspector share the ToolPage layout and standard site
-navigation; keep tool links contextual and in the footer. Keep record/history/
+navigation. Keep both tools discoverable in the header Tools menu as well as
+contextual actions and footer links. Keep record/history/
 verification presentation in `src/modules/inspector`; do not tie
 it to the notes model or demo identities. Verify original bytes through Ledger's
 published protocol API. Never normalize JSON before signature verification. Keep

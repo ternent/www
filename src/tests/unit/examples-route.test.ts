@@ -56,7 +56,7 @@ test("inspection opens the committed example in the standalone tool with its rea
   expect(wrapper.find(".site-header").exists()).toBe(true);
   expect(wrapper.find(".site-footer").exists()).toBe(true);
   expect(wrapper.find(".workbench-header").exists()).toBe(false);
-  expect(wrapper.find('.site-header a[href="/inspect"]').exists()).toBe(false);
+  expect(wrapper.get('.header-tools a[href="/inspect"]').text()).toBe("Document inspector");
   expect(wrapper.get('.site-footer a[href="/inspect"]').text()).toBe("Document inspector");
   const head = wrapper.get(".head-label").attributes("title");
   expect(wrapper.find(".entry-inspector").exists()).toBe(false);
