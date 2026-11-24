@@ -786,7 +786,7 @@
     font-size: 8px;
     margin: 0;
   }
-  .code-heading .status-dot {
+  .code-heading .status-label {
     font-size: 10px;
   }
   .code-block {
@@ -1106,21 +1106,23 @@
     display: flex;
     align-items: center;
     flex-wrap: wrap;
-    gap: 22px;
+    gap: 8px 22px;
     padding: 8px 24px;
     font-size: 10px;
     color: var(--muted);
     border-top: 1px solid var(--line);
     background: var(--ui-surface);
   }
-  .status-dot {
+  .status-label {
     display: inline-flex;
     align-items: center;
     gap: 6px;
+    min-width: 0;
+    max-width: 100%;
     color: var(--accent);
-    white-space: nowrap;
+    overflow-wrap: anywhere;
   }
-  .status-dot::before {
+  .status-label::before {
     content: "";
     width: 5px;
     height: 5px;
@@ -1128,10 +1130,10 @@
     background: currentColor;
     flex-shrink: 0;
   }
-  .status-dot.warning {
+  .status-label.warning {
     color: var(--ui-danger, #bd5c61);
   }
-  .status-dot.muted {
+  .status-label.muted {
     color: var(--muted);
   }
   .head-label {

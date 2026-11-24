@@ -463,7 +463,7 @@ function reset() {
           </div>
           <div class="status-strip">
             <span
-              class="status-dot"
+              class="status-label"
               :class="{ warning: report?.verification.integrity !== 'valid' }"
               >{{
                 report?.verification.integrity === "valid" ? "Verified" : "Inspection only"

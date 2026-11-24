@@ -82,13 +82,17 @@ const prettyDate = (input: string) => {
       </dl>
       <div class="code-heading readable-heading">
         <h3>{{ encrypted ? "Readable event" : "Recorded payload" }}</h3>
-        <span class="status-dot" :class="{ muted: encrypted && replayed?.status !== 'readable' }">{{
-          replayed?.status === "readable"
-            ? "Decrypted locally"
-            : encrypted
-              ? "Encrypted"
-              : "Stored JSON"
-        }}</span>
+        <span
+          class="status-label"
+          :class="{ muted: encrypted && replayed?.status !== 'readable' }"
+          >{{
+            replayed?.status === "readable"
+              ? "Decrypted locally"
+              : encrypted
+                ? "Encrypted"
+                : "Stored JSON"
+          }}</span
+        >
       </div>
       <pre class="code-block readable-code" tabindex="0">{{ format(readable) }}</pre>
       <div class="code-heading stored-heading">

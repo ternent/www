@@ -513,7 +513,7 @@ async function recheck() {
           </div>
           <div class="status-strip">
             <span
-              class="status-dot"
+              class="status-label"
               :class="{ warning: report && report.integrity !== 'valid', muted: !report }"
               >{{ status }}</span
             ><span>{{ size }}</span><span>No file upload</span>
