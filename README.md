@@ -193,9 +193,30 @@ writes use `age`. No identity material is sent to a server.
 
 ## Hosting
 
-Publish `dist/` to the static host. `vercel.json` retains clean URLs, application
-fallbacks, security headers and service-worker revalidation. Other hosts need
-equivalent route handling. Publishing the live site is a separate review action.
+GitHub Actions runs one `pnpm check` job on pull requests and `main`. Cloudflare
+Workers Builds installs the frozen lockfile, runs `pnpm build`, then uploads `dist/`.
+Wrangler uses `wrangler.jsonc` for an assets-only deployment with clean HTML URLs
+and the application's unknown-route fallback. It does not detect a framework or
+rebuild the site. No Cloudflare Vite plugin or server Worker is needed.
+
+Use these Workers Builds settings with the repository root as the root directory:
+
+| Setting        | Production                             | Staging                                     |
+| -------------- | -------------------------------------- | ------------------------------------------- |
+| Worker         | `ternentdotdev`                        | `staging`                                   |
+| Build command  | `pnpm build`                           | `pnpm build`                                |
+| Deploy command | `npx wrangler@4.168.0 deploy --env ""` | `npx wrangler@4.168.0 deploy --env staging` |
+
+Check the deployment configuration without publishing:
+
+```sh
+npx wrangler@4.168.0 deploy --env "" --dry-run
+npx wrangler@4.168.0 deploy --env staging --dry-run
+```
+
+`vercel.json` retains that host's clean URLs, application fallbacks, security
+headers and service-worker revalidation. Other hosts need equivalent handling.
+Publishing the live site is a separate review action.
 
 The suite subdomains (`identity`, `armour`, `seal`, `ledger`, `concord`) replace their
 root URLs with the matching route on `https://ternent.dev`. Explicit paths, queries

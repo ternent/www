@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import "@/modules/inspector/workbench.css";
 import { onMounted, ref, shallowRef, watch } from "vue";
 import { verifySealProofAgainstBytes, type SealProofV2 } from "@ternent/seal/proof";
 import ToolPage from "@/components/ToolPage.vue";

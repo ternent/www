@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import "../inspector/workbench.css";
 import "./examples.css";
 import { computed, onMounted, ref, shallowRef, triggerRef } from "vue";
 import { useRouter } from "vue-router";

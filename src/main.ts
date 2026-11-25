@@ -9,6 +9,7 @@ import { pageSeo } from "./app/config/page-seo";
 import "./themes.css";
 import "./style.css";
 import "./story.css";
+import "./modules/inspector/workbench.css";
 
 export const createApp = ViteSSG(
   App,
