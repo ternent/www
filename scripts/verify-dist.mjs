@@ -45,6 +45,19 @@ for (const file of readdirSync(root, { recursive: true }).filter(
   (file) => file.endsWith(".html") && file !== "offline.html",
 )) {
   const html = readFileSync(resolve(root, file), "utf8");
+  if (/^(inspect|examples)(?:\/|\.html$)/.test(file)) {
+    const css = [...html.matchAll(/<link\b[^>]*rel=["']stylesheet["'][^>]*href=["']([^"']+)/g)]
+      .map((match) => readFileSync(localFile(match[1]), "utf8"))
+      .join("\n");
+    const base = css.indexOf(".story .document-workbench");
+    assert.ok(base >= 0, `${file} must include shared workbench styles`);
+    const override = css.search(
+      /\.(?:inspector-page \.inspector|examples-page \.examples)-workbench/,
+    );
+    if (override >= 0) {
+      assert.ok(base < override, `${file} must load workbench styles before page overrides`);
+    }
+  }
   const links = html.match(/<link\b[^>]*rel=["']manifest["'][^>]*>/g) ?? [];
   assert.equal(links.length, 1, `${file} must have one manifest link`);
   assert.ok(

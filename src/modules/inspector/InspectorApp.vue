@@ -1,5 +1,4 @@
 <script setup lang="ts">
-import "./workbench.css";
 import "./inspector.css";
 import { computed, nextTick, onActivated, onMounted, ref, shallowRef, watch } from "vue";
 import { useRoute, useRouter } from "vue-router";
