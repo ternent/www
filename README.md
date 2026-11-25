@@ -201,11 +201,12 @@ rebuild the site. No Cloudflare Vite plugin or server Worker is needed.
 
 Use these Workers Builds settings with the repository root as the root directory:
 
-| Setting        | Production                             | Staging                                     |
-| -------------- | -------------------------------------- | ------------------------------------------- |
-| Worker         | `ternentdotdev`                        | `staging`                                   |
-| Build command  | `pnpm build`                           | `pnpm build`                                |
-| Deploy command | `npx wrangler@4.168.0 deploy --env ""` | `npx wrangler@4.168.0 deploy --env staging` |
+| Setting         | Production                                      | Staging                                              |
+| --------------- | ----------------------------------------------- | ---------------------------------------------------- |
+| Worker          | `ternentdotdev`                                 | `staging`                                            |
+| Build command   | `pnpm build`                                    | `pnpm build`                                         |
+| Deploy command  | `npx wrangler@4.168.0 deploy --env ""`          | `npx wrangler@4.168.0 deploy --env staging`          |
+| Preview command | `npx wrangler@4.168.0 versions upload --env ""` | `npx wrangler@4.168.0 versions upload --env staging` |
 
 Check the deployment configuration without publishing:
 
